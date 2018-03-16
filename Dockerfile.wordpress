@@ -37,4 +37,4 @@ RUN chmod a+x /usr/local/bin/docker-entrypoint.sh
 RUN sed -ri -e 's!#ServerName .*!ServerName $PROJECT!' /etc/apache2/sites-enabled/000-default.conf
 
 ENTRYPOINT ["docker-entrypoint.sh"]
-CMD ["apache2-foreground", "-X"]
+CMD ["apache2-foreground"]
