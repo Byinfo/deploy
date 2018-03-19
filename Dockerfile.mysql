@@ -2,9 +2,6 @@ FROM mysql:5.6
 
 ENV DEBIAN_FRONTEND noninteractive
 
-ARG USERID
-ARG GROUPID
-
 RUN userdel mysql
 
 RUN bash -c 'if [[ $(getent group $GROUPID | cut -d: -f1) == "" ]]; then groupadd -g $GROUPID mysql; else groupmod --new-name mysql $(getent group $GROUPID | cut -d: -f1); fi'

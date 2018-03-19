@@ -123,7 +123,7 @@ function gitcmd() {
 
 function display_usage {
     echo "Usage:"
-    echo "    $0 ( prepare | up | down | mysqldump | upload )"
+    echo "    $0 ( prepare | up | down | sync-database | dump-database )"
     exit 1;
 }
 
@@ -184,16 +184,12 @@ case $1 in
         if [[ $MYSQL_DOCKERFILE ]]; then
             envsubst < $MYSQL_DOCKERFILE | \
                 docker build -f - \
-                    --build-arg USERID=$USERID \
-                    --build-arg GROUPID=$GROUPID \
                     -t $MYSQL_IMAGE . || exit 1
         fi
 
         if [[ $APP_DOCKERFILE ]]; then
             envsubst < $APP_DOCKERFILE | \
                 docker build -f - \
-                    --build-arg USERID=$USERID \
-                    --build-arg GROUPID=$GROUPID \
                     -t $APP_IMAGE . || exit 1
         fi
 
@@ -203,7 +199,7 @@ case $1 in
         fi
         ;;
     down)
-        envsubst < docker-compose.yml | docker-compose -f - $*
+        envsubst < docker-compose.yml | docker-compose -p $PROJECT -f - $*
         ;;
     up)
         if [[ ! -d data/db ]]; then
@@ -220,39 +216,49 @@ case $1 in
         touch log/apache2/error.log
         touch log/mysql/error.log
         if [[ -d webroot/.git ]]; then
-            envsubst < docker-compose.yml | docker-compose -f - $*
+            envsubst < docker-compose.yml | docker-compose -p $PROJECT -f - $*
         else
             display_usage
             exit 1
         fi
         ;;
     ps)
-        envsubst < docker-compose.yml | docker-compose -f - ps
+        envsubst < docker-compose.yml | docker-compose -p $PROJECT -f - ps
         ;;
     run)
-        envsubst < docker-compose.yml | docker-compose -f - run --rm webapp ${*:2}
+        envsubst < docker-compose.yml | docker-compose -p $PROJECT -f - run --rm webapp ${*:2}
         ;;
     exec)
-        envsubst < docker-compose.yml | docker-compose -f - exec webapp ${*:2}
+        envsubst < docker-compose.yml | docker-compose -p $PROJECT -f - exec webapp ${*:2}
         ;;
     git)
         gitcmd -C webroot/ ${*:2}
         ;;
-    mysqldump|upload)
-        if [[ ! -d backup ]]; then
-            mkdir backup
-        fi 
-        FILENAME=$MYSQL_CONTAINER-$(date +%Y-%m-%d.%H:%M:%S).sql.gz
-        if [[ $(docker ps -f id=$(envsubst < docker-compose.yml | docker-compose -f - ps -q mysql) -q) != ""  ]]; then
-            envsubst < docker-compose.yml | docker-compose -f - exec -T mysql mysqldump -uroot $MYSQL_DATABASE | gzip - > backup/$FILENAME
+    dump-database)
+        if [[ $(docker ps -f id=$(envsubst < docker-compose.yml | docker-compose -p $PROJECT -f - ps -q mysql) -q) != ""  ]]; then
+            envsubst < docker-compose.yml | docker-compose -p $PROJECT -f - exec -T mysql mysqldump -uroot $MYSQL_DATABASE
         else
             echo "MYSQL container is not running"
             exit 1
         fi
-
-        if [[ $1 == "upload" ]]; then
-            upload_dump $BUCKET $FILENAME
+        ;;
+    upload)
+        if [[ ! -d backup ]]; then
+            mkdir backup
+        fi 
+        FILENAME=$MYSQL_CONTAINER-$(date +%Y-%m-%d.%H:%M:%S).sql.gz
+        if [[ $(docker ps -f id=$(envsubst < docker-compose.yml | docker-compose -p $PROJECT -f - ps -q mysql) -q) != ""  ]]; then
+            envsubst < docker-compose.yml | docker-compose -p $PROJECT -f - exec -T mysql mysqldump -uroot $MYSQL_DATABASE | gzip - > backup/$FILENAME
+        else
+            echo "MYSQL container is not running"
+            exit 1
         fi
+        upload_dump $BUCKET $FILENAME
+        ;;
+    sync-database)
+        rm -rf data/
+        rm -rf mysql-init-script/
+        get_latest_db_dump $BUCKET
         ;;
     clean)
         cat .gitignore | grep -v 'webroot' | sed -e 's#^/#.//#' | xargs rm -rf
