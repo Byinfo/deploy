@@ -123,7 +123,7 @@ function gitcmd() {
 
 function display_usage {
     echo "Usage:"
-    echo "    $0 ( prepare | up | down | ps | mysqldump | upload )"
+    echo "    $0 ( prepare | up | down | sync-database | dump-database )"
     exit 1;
 }
 
@@ -234,7 +234,15 @@ case $1 in
     git)
         gitcmd -C webroot/ ${*:2}
         ;;
-    mysqldump|upload)
+    dump-database)
+        if [[ $(docker ps -f id=$(envsubst < docker-compose.yml | docker-compose -p $PROJECT -f - ps -q mysql) -q) != ""  ]]; then
+            envsubst < docker-compose.yml | docker-compose -p $PROJECT -f - exec -T mysql mysqldump -uroot $MYSQL_DATABASE
+        else
+            echo "MYSQL container is not running"
+            exit 1
+        fi
+        ;;
+    upload)
         if [[ ! -d backup ]]; then
             mkdir backup
         fi 
@@ -245,10 +253,12 @@ case $1 in
             echo "MYSQL container is not running"
             exit 1
         fi
-
-        if [[ $1 == "upload" ]]; then
-            upload_dump $BUCKET $FILENAME
-        fi
+        upload_dump $BUCKET $FILENAME
+        ;;
+    sync-database)
+        rm -rf data/
+        rm -rf mysql-init-script/
+        get_latest_db_dump $BUCKET
         ;;
     clean)
         cat .gitignore | grep -v 'webroot' | sed -e 's#^/#.//#' | xargs rm -rf
