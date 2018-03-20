@@ -1,5 +1,6 @@
 #!/bin/bash
 
+set -o pipefail
 
 function get_aws_cli() {
     DOCKERFILE="
@@ -231,7 +232,7 @@ case $1 in
         envsubst < docker-compose.yml | docker-compose -p $PROJECT -f - ps
         ;;
     run)
-        envsubst < docker-compose.yml | docker-compose -p $PROJECT -f - run --rm webapp ${*:2}
+        envsubst < docker-compose.yml | docker-compose -p $PROJECT -f - run --no-deps --rm webapp "${@:2}"
         ;;
     exec)
         envsubst < docker-compose.yml | docker-compose -p $PROJECT -f - exec webapp ${*:2}
