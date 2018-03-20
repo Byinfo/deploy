@@ -116,9 +116,9 @@ function upload_dump() {
 function gitcmd() {
     if [[ $REPOSITORY_KEY != "" ]]; then
         GIT=$(get_git_cli "$REPOSITORY_KEY")
-        docker run -ti --rm -v $PWD:/git -e GIT_SSH_COMMAND='ssh  -o "StrictHostKeyChecking no" -i /id_rsa' $GIT $*
+        docker run -ti --rm -v $PWD:/git -e GIT_SSH_COMMAND='ssh  -o "StrictHostKeyChecking no" -i /id_rsa' $GIT "$@"
     else
-        git $*
+        git "$@"
     fi
 }
 
@@ -205,7 +205,7 @@ case $1 in
         fi
         ;;
     down)
-        envsubst < docker-compose.yml | docker-compose -p $PROJECT -f - $*
+        envsubst < docker-compose.yml | docker-compose -p $PROJECT -f - "$@"
         ;;
     up)
         if [[ ! -d data/db ]]; then
@@ -222,7 +222,7 @@ case $1 in
         touch log/apache2/error.log
         touch log/mysql/error.log
         if [[ -d webroot/.git ]]; then
-            envsubst < docker-compose.yml | docker-compose -p $PROJECT -f - $*
+            envsubst < docker-compose.yml | docker-compose -p $PROJECT -f - "$@"
         else
             display_usage
             exit 1
