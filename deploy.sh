@@ -124,7 +124,7 @@ function gitcmd() {
 
 function display_usage {
     echo "Usage:"
-    echo "    $0 ( prepare | up | down | sync-database | dump-database )"
+    echo "    $0 ( prepare | up | down | status | sync-database | dump-database )"
     exit 1;
 }
 
@@ -228,7 +228,7 @@ case $1 in
             exit 1
         fi
         ;;
-    ps)
+    status)
         envsubst < docker-compose.yml | docker-compose -p $PROJECT -f - ps
         ;;
     run)
@@ -248,6 +248,11 @@ case $1 in
             exit 1
         fi
         ;;
+    sync-database)
+        rm -rf data/
+        rm -rf mysql-init-script/
+        get_latest_db_dump $BUCKET
+        ;;
     upload)
         if [[ ! -d backup ]]; then
             mkdir backup
@@ -260,11 +265,6 @@ case $1 in
             exit 1
         fi
         upload_dump $BUCKET $FILENAME
-        ;;
-    sync-database)
-        rm -rf data/
-        rm -rf mysql-init-script/
-        get_latest_db_dump $BUCKET
         ;;
     clean)
         cat .gitignore | grep -v 'webroot' | sed -e 's#^/#.//#' | xargs rm -rf
