@@ -10,7 +10,7 @@ MYSQL_DOCKERFILE="Dockerfile.mysql"
 #MYSQL_IMAGE="mysql:5.6"
 MYSQL_PORT_MAP="'3306:3306'"
 #APP_DOCKERFILE="Dockerfile.wordpress"
-APP_ROOT="" # relative to ./src/ 
+APP_ROOT="" # relative to ./webroot/, no leading slash, with ending slash
 APP_PORT_MAP="'80:80'"
 
 MYSQL_USER=wordpress

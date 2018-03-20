@@ -1,5 +1,6 @@
 #!/bin/bash
 
+set -o pipefail
 
 function get_aws_cli() {
     DOCKERFILE="
@@ -142,6 +143,7 @@ source ./config
 
 MYSQL_CONTAINER="$PROJECT-mysql"
 APP_CONTAINER="$PROJECT-app"
+APACHE_DOCUMENT_ROOT=/var/www/html/${APP_ROOT%/}
 
 if [[ -z $MYSQL_IMAGE ]]; then
      MYSQL_DOCKERFILE=${MYSQL_DOCKERFILE:-Dockerfile.mysql}
@@ -166,6 +168,10 @@ else
         case $APP_TYPE in
             wordpress)
                 APP_DOCKERFILE="Dockerfile.wordpress"
+                APP_IMAGE=$APP_CONTAINER
+                ;;
+            opencart)
+                APP_DOCKERFILE="Dockerfile.opencart"
                 APP_IMAGE=$APP_CONTAINER
                 ;;
             *)
@@ -226,7 +232,7 @@ case $1 in
         envsubst < docker-compose.yml | docker-compose -p $PROJECT -f - ps
         ;;
     run)
-        envsubst < docker-compose.yml | docker-compose -p $PROJECT -f - run --rm webapp ${*:2}
+        envsubst < docker-compose.yml | docker-compose -p $PROJECT -f - run --no-deps --rm webapp "${@:2}"
         ;;
     exec)
         envsubst < docker-compose.yml | docker-compose -p $PROJECT -f - exec webapp ${*:2}
