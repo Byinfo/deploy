@@ -86,11 +86,11 @@ define('HTTPS_SERVER', 'http://' . \$_SERVER['HTTP_HOST'] .'/admin/');
 define('HTTPS_CATALOG', 'http://' . \$_SERVER['HTTP_HOST'] .'/');
 
 // DIR
-define('DIR_APPLICATION', '/var/www/html/${APP_ROOT}catalog/');
+define('DIR_APPLICATION', '/var/www/html/${APP_ROOT}admin/');
 define('DIR_SYSTEM', '/var/www/html/${APP_ROOT}system/');
 define('DIR_IMAGE', '/var/www/html/${APP_ROOT}image/');
-define('DIR_LANGUAGE', '/var/www/html/${APP_ROOT}catalog/language/');
-define('DIR_TEMPLATE', '/var/www/html/${APP_ROOT}catalog/view/theme/');
+define('DIR_LANGUAGE', '/var/www/html/${APP_ROOT}admin/language/');
+define('DIR_TEMPLATE', '/var/www/html/${APP_ROOT}admin/view/template/');
 define('DIR_CONFIG', '/var/www/html/${APP_ROOT}system/config/');
 define('DIR_CACHE', '/var/www/html/${APP_ROOT}system/storage/cache/');
 define('DIR_DOWNLOAD', '/var/www/html/${APP_ROOT}system/storage/download/');
