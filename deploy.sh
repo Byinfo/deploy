@@ -142,6 +142,7 @@ source ./config
 
 MYSQL_CONTAINER="$PROJECT-mysql"
 APP_CONTAINER="$PROJECT-app"
+APACHE_DOCUMENT_ROOT=/var/www/html/${APP_ROOT%/}
 
 if [[ -z $MYSQL_IMAGE ]]; then
      MYSQL_DOCKERFILE=${MYSQL_DOCKERFILE:-Dockerfile.mysql}
@@ -166,6 +167,10 @@ else
         case $APP_TYPE in
             wordpress)
                 APP_DOCKERFILE="Dockerfile.wordpress"
+                APP_IMAGE=$APP_CONTAINER
+                ;;
+            opencart)
+                APP_DOCKERFILE="Dockerfile.opencart"
                 APP_IMAGE=$APP_CONTAINER
                 ;;
             *)

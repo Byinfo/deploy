@@ -24,6 +24,7 @@ services:
             - "./log/apache2/access.log:/var/log/apache2/access.log"
             - "./log/apache2/error.log:/var/log/apache2/error.log"
         environment:
+            APP_ROOT: $APP_ROOT
             MYSQL_PASSWORD: $MYSQL_ROOT_PASSWORD
             MYSQL_USER: $MYSQL_USER
             MYSQL_DATABASE: $MYSQL_DATABASE
