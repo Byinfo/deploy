@@ -2,6 +2,7 @@ version: '3.1'
 
 services:
     mysql:
+        restart: always
         container_name: $MYSQL_CONTAINER
         image: $MYSQL_IMAGE
         environment:
@@ -16,6 +17,7 @@ services:
             - "./log/mysql/error.log:/var/log/mysql/error.log"
         ports: [ $MYSQL_PORT_MAP ]
     webapp:
+        restart: always
         container_name: $APP_CONTAINER
         image: $APP_IMAGE
         ports: [ $APP_PORT_MAP ]
@@ -24,6 +26,7 @@ services:
             - "./log/apache2/access.log:/var/log/apache2/access.log"
             - "./log/apache2/error.log:/var/log/apache2/error.log"
         environment:
+            APP_ROOT: $APP_ROOT
             MYSQL_PASSWORD: $MYSQL_ROOT_PASSWORD
             MYSQL_USER: $MYSQL_USER
             MYSQL_DATABASE: $MYSQL_DATABASE

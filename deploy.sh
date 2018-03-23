@@ -1,5 +1,6 @@
 #!/bin/bash
 
+set -o pipefail
 
 function get_aws_cli() {
     DOCKERFILE="
@@ -115,15 +116,15 @@ function upload_dump() {
 function gitcmd() {
     if [[ $REPOSITORY_KEY != "" ]]; then
         GIT=$(get_git_cli "$REPOSITORY_KEY")
-        docker run -ti --rm -v $PWD:/git -e GIT_SSH_COMMAND='ssh  -o "StrictHostKeyChecking no" -i /id_rsa' $GIT $*
+        docker run -ti --rm -v $PWD:/git -e GIT_SSH_COMMAND='ssh  -o "StrictHostKeyChecking no" -i /id_rsa' $GIT "$@"
     else
-        git $*
+        git "$@"
     fi
 }
 
 function display_usage {
     echo "Usage:"
-    echo "    $0 ( prepare | up | down | sync-database | dump-database )"
+    echo "    $0 ( prepare | up | down | status | sync-database | dump-database )"
     exit 1;
 }
 
@@ -142,6 +143,7 @@ source ./config
 
 MYSQL_CONTAINER="$PROJECT-mysql"
 APP_CONTAINER="$PROJECT-app"
+APACHE_DOCUMENT_ROOT=/var/www/html/${APP_ROOT%/}
 
 if [[ -z $MYSQL_IMAGE ]]; then
      MYSQL_DOCKERFILE=${MYSQL_DOCKERFILE:-Dockerfile.mysql}
@@ -166,6 +168,10 @@ else
         case $APP_TYPE in
             wordpress)
                 APP_DOCKERFILE="Dockerfile.wordpress"
+                APP_IMAGE=$APP_CONTAINER
+                ;;
+            opencart)
+                APP_DOCKERFILE="Dockerfile.opencart"
                 APP_IMAGE=$APP_CONTAINER
                 ;;
             *)
@@ -199,7 +205,7 @@ case $1 in
         fi
         ;;
     down)
-        envsubst < docker-compose.yml | docker-compose -p $PROJECT -f - $*
+        envsubst < docker-compose.yml | docker-compose -p $PROJECT -f - "$@"
         ;;
     up)
         if [[ ! -d data/db ]]; then
@@ -216,17 +222,17 @@ case $1 in
         touch log/apache2/error.log
         touch log/mysql/error.log
         if [[ -d webroot/.git ]]; then
-            envsubst < docker-compose.yml | docker-compose -p $PROJECT -f - $*
+            envsubst < docker-compose.yml | docker-compose -p $PROJECT -f - "$@"
         else
             display_usage
             exit 1
         fi
         ;;
-    ps)
+    status)
         envsubst < docker-compose.yml | docker-compose -p $PROJECT -f - ps
         ;;
     run)
-        envsubst < docker-compose.yml | docker-compose -p $PROJECT -f - run --rm webapp ${*:2}
+        envsubst < docker-compose.yml | docker-compose -p $PROJECT -f - run --no-deps --rm webapp "${@:2}"
         ;;
     exec)
         envsubst < docker-compose.yml | docker-compose -p $PROJECT -f - exec webapp ${*:2}
@@ -242,6 +248,11 @@ case $1 in
             exit 1
         fi
         ;;
+    sync-database)
+        rm -rf data/
+        rm -rf mysql-init-script/
+        get_latest_db_dump $BUCKET
+        ;;
     upload)
         if [[ ! -d backup ]]; then
             mkdir backup
@@ -254,11 +265,6 @@ case $1 in
             exit 1
         fi
         upload_dump $BUCKET $FILENAME
-        ;;
-    sync-database)
-        rm -rf data/
-        rm -rf mysql-init-script/
-        get_latest_db_dump $BUCKET
         ;;
     clean)
         cat .gitignore | grep -v 'webroot' | sed -e 's#^/#.//#' | xargs rm -rf
