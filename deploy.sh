@@ -174,6 +174,10 @@ else
                 APP_DOCKERFILE="Dockerfile.opencart"
                 APP_IMAGE=$APP_CONTAINER
                 ;;
+            drupal7)
+                APP_DOCKERFILE="Dockerfile.drupal7"
+                APP_IMAGE=$APP_CONTAINER
+                ;;
             *)
                 echo "Unsupported project type $TYPE"
                 exit 1
