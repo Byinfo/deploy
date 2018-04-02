@@ -30,9 +30,8 @@ RUN apt-get install -y --no-install-recommends \
         nano \
         unzip \
         git \
-	yarn
+        yarn
 
-RUN npm install -g gulp
 RUN yarn global add gulp
 
 RUN docker-php-ext-configure gd --with-png-dir=/usr --with-jpeg-dir=/usr --with-freetype-dir=/usr

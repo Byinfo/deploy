@@ -23,24 +23,21 @@ if [[ "$1" == apache2* ]] || [ "$1" == php-fpm ]; then
 		group="$(id -g)"
 	fi
 
-	if [ ! -z "$(ls -A /var/www/html)" ]; then
-		echo "Processing WEBROOT setup.."
-		if [ ! -e /var/www/html/sites/default/default.settings.php ]; then
-			ls -lah /var/www/html/
-			echo "-----------> NO docker.settings.php FOUND         <-----------"
-			echo "-----------> Setup /sites/default/settings.php !! <-----------"
-		else
-			settingsf="/var/www/html/sites/default/settings.php";
-			cp -a /var/www/html/sites/default/default.settings.php $settingsf
-                        echo -e "\$databases['default']['default'] = array(\n" \
-                                "  'driver' => 'mysql',\n" \
-                                "  'database' => 'ndcpartner',\n" \
-                                "  'username' => 'ndcpartner_user',\n" \
-                                "  'password' => 'owj1hJ2EKXyj',\n" \
-                                "  'host' => 'mysql',\n" \
-                                "  'collation' => 'utf8_general_ci',\n" \
-                                ");\n\n" >> $settingsf
+	settingsf="/var/www/html/sites/default/settings.php";
+	if [ ! -f $settingsf ]; then
+		cp -a /var/www/html/sites/default/default.settings.php $settingsf
+		if [ ! -z "${DEBUG:-}" ]; then
+			echo -e "\$conf['theme_debug'] = TRUE;\n" >> $settingsf
 		fi
+		echo -e "\$databases['default']['default'] = array(\n" \
+			"  'driver' => 'mysql',\n" \
+			"  'database' => '${MYSQL_DATABASE}',\n" \
+			"  'username' => '${MYSQL_USER}',\n" \
+			"  'password' => '${MYSQL_PASSWORD}',\n" \
+			"  'host' => '${MYSQL_HOST}',\n" \
+			"  'collation' => 'utf8_general_ci',\n" \
+			");\n\n" >> $settingsf
+		chown "$user:$group" $settingsf;
 	fi
 
 fi
