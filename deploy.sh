@@ -116,7 +116,7 @@ function upload_dump() {
 function gitcmd() {
     if [[ $REPOSITORY_KEY != "" ]]; then
         GIT=$(get_git_cli "$REPOSITORY_KEY")
-        docker run -ti --rm -v $PWD:/git -e GIT_SSH_COMMAND='ssh  -o "StrictHostKeyChecking no" -i /id_rsa' $GIT "$@"
+        docker run -ti --rm -v $PWD:/git -e GIT_SSH_COMMAND='ssh -o "StrictHostKeyChecking no" -o "UserKnownHostsFile /dev/null" -i /id_rsa' $GIT "$@"
     else
         git "$@"
     fi
