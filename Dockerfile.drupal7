@@ -59,7 +59,6 @@ RUN chmod a+x /usr/local/bin/docker-entrypoint.sh
 
 RUN sed -ri -e 's!#ServerName .*!ServerName $PROJECT!' /etc/apache2/sites-enabled/000-default.conf
 RUN sed -ri -e 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/apache2.conf /etc/apache2/sites-enabled/*.conf
-RUN sed -i 's#</VirtualHost>#RewriteEngine On\nRewriteCond %{REQUEST_FILENAME} !-f\nRewriteRule \.(jpg|png)$ http://ndcpartnership.org%{REQUEST_URI} [P,L]\n</VirtualHost>#' /etc/apache2/sites-available/000-default.conf
 
 ENTRYPOINT ["docker-entrypoint.sh"]
 CMD ["apache2-foreground"]
