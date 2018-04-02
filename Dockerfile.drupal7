@@ -47,8 +47,13 @@ RUN { \
     echo 'opcache.enable_cli=1'; \
 } > /usr/local/etc/php/conf.d/opcache-recommended.ini
 
-RUN a2enmod rewrite expires proxy proxy_http proxy_ajp
+RUN { \
+    echo 'memory_limit=512M'; \
+    echo 'post_max_size=512M'; \
+    echo 'upload_max_filesize=512M'; \
+} > /usr/local/etc/php/conf.d/php.ini
 
+RUN a2enmod rewrite expires proxy proxy_http proxy_ajp
 
 COPY ./scripts/drupal7/docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
 RUN chmod a+x /usr/local/bin/docker-entrypoint.sh

@@ -29,6 +29,12 @@ RUN { \
     echo 'opcache.enable_cli=1'; \
 } > /usr/local/etc/php/conf.d/opcache-recommended.ini
 
+RUN { \
+    echo 'memory_limit=512M'; \
+    echo 'post_max_size=512M'; \
+    echo 'upload_max_filesize=512M'; \
+} > /usr/local/etc/php/conf.d/php.ini
+
 RUN a2enmod rewrite expires
 
 COPY ./scripts/wordpress/docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
