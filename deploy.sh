@@ -165,27 +165,14 @@ if [[ $APP_DOCKERFILE ]]; then
      APP_IMAGE=$APP_CONTAINER
 else
     if [[ -z $APP_IMAGE ]]; then
-        case $APP_TYPE in
-            wordpress)
-                APP_DOCKERFILE="Dockerfile.wordpress"
-                APP_IMAGE=$APP_CONTAINER
-                ;;
-            opencart)
-                APP_DOCKERFILE="Dockerfile.opencart"
-                APP_IMAGE=$APP_CONTAINER
-                ;;
-            drupal7)
-                APP_DOCKERFILE="Dockerfile.drupal7"
-                APP_IMAGE=$APP_CONTAINER
-                ;;
-            *)
-                echo "Unsupported project type $TYPE"
-                exit 1
-                ;;
-        esac
+        APP_DOCKERFILE="Dockerfile.${APP_TYPE}"
+        APP_IMAGE=$APP_CONTAINER
+        if [[ ! -e $APP_DOCKERFILE ]]; then
+            echo "Unsupported project type '$APP_TYPE'"
+            exit 1
+        fi
     fi
 fi
-
 
 
 case $1 in
