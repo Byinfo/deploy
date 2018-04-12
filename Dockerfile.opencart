@@ -45,6 +45,11 @@ RUN { \
     echo 'memory_limit=512M'; \
     echo 'post_max_size=512M'; \
     echo 'upload_max_filesize=512M'; \
+    echo 'error_reporting=E_ALL'; \
+    echo 'display_errors = On'; \
+    echo 'display_startup_errors = On'; \
+    echo 'log_errors = On'; \
+    echo 'log_errors_max_len = 4096'; \
 } > /usr/local/etc/php/conf.d/php.ini
 
 RUN a2enmod rewrite expires
