@@ -37,7 +37,8 @@ RUN { \
     echo 'display_errors = On'; \
     echo 'display_startup_errors = On'; \
     echo 'log_errors = On'; \
-    echo 'log_errors_max_len = 4096'; \
+    echo 'log_errors_max_len = 0'; \
+    echo 'error_log = /dev/stderr'; \
 } > /usr/local/etc/php/conf.d/php.ini
 
 RUN a2enmod rewrite expires
