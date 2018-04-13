@@ -142,8 +142,9 @@ fi
 # self-update
 git fetch
 if [ -n $(git diff --name-only origin/master) ]; then
+    echo $(git diff --name-only origin/master)
     echo "Found a new version of me, updating myself..."
-    git pull --force
+    git reset --hard origin/master
     echo "Running the new version..."
     exec "$0" "$@"
     # Now exit this old instance
