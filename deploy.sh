@@ -140,13 +140,13 @@ if [[ $USERID == "0" ]]; then
 fi
 
 # self-update
+echo "Checking for a new version of me..."
 git fetch
 if [[ -n $(git diff --name-only origin/master) ]]; then
-    echo "Found a new version of me, updating myself..."
+    echo "Found a new version of me, updating..."
     git reset --hard origin/master
-    echo "Running the new version..."
+    echo "Restarting..."
     exec "$0" "$@"
-    # Now exit this old instance
     exit 1
 fi
 
