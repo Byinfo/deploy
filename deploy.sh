@@ -139,6 +139,17 @@ if [[ $USERID == "0" ]]; then
     exit 1;
 fi
 
+# self-update
+git fetch
+if [ -n $(git diff --name-only origin/master) ]; then
+    echo "Found a new version of me, updating myself..."
+    git pull --force
+    echo "Running the new version..."
+    exec "$0" "$@"
+    # Now exit this old instance
+    exit 1
+fi
+
 source ./config
 
 MYSQL_CONTAINER="$PROJECT-mysql"
