@@ -12,9 +12,9 @@ services:
             MYSQL_DATABASE: $MYSQL_DATABASE
             LANG: C.UTF-8
         volumes:
-            - "./data/db/mysql:/var/lib/mysql:delegated"
+            - "./data/db/mysql:/var/lib/mysql:cached"
             - "./mysql-init-script:/docker-entrypoint-initdb.d:cached"
-            - "./log/mysql/error.log:/var/log/mysql/error.log:delegated"
+            - "./log/mysql/error.log:/var/log/mysql/error.log:cached"
         ports: [ $MYSQL_PORT_MAP ]
     webapp:
         restart: always
@@ -23,8 +23,8 @@ services:
         ports: [ $APP_PORT_MAP ]
         volumes:
             - "./webroot/:/var/www/html/:cached"
-            - "./log/apache2/access.log:/var/log/apache2/access.log:delegated"
-            - "./log/apache2/error.log:/var/log/apache2/error.log:delegated"
+            - "./log/apache2/access.log:/var/log/apache2/access.log:cached"
+            - "./log/apache2/error.log:/var/log/apache2/error.log:cached"
         environment:
             APP_ROOT: $APP_ROOT
             MYSQL_PASSWORD: $MYSQL_ROOT_PASSWORD
