@@ -30,5 +30,6 @@ services:
             MYSQL_DATABASE: $MYSQL_DATABASE
             MYSQL_HOST: $MYSQL_CONTAINER
             LANG: C.UTF-8
+            DEBUG: $DEBUG
         depends_on:
             - mysql
