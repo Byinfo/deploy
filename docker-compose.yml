@@ -12,7 +12,7 @@ services:
             LANG: C.UTF-8
         volumes:
             - "./data/db/mysql:/var/lib/mysql:delegated"
-            - "./mysql-init-script:/docker-entrypoint-initdb.d:cached"
+            - "./mysql-init-script:/docker-entrypoint-initdb.d:delegated"
             - "./log/mysql/error.log:/var/log/mysql/error.log:delegated"
         ports: [ $MYSQL_PORT_MAP ]
     webapp:
@@ -20,7 +20,7 @@ services:
         image: $APP_IMAGE
         ports: [ $APP_PORT_MAP ]
         volumes:
-            - "./webroot/:/var/www/html/:cached"
+            - "./webroot/:/var/www/html/:delegated"
             - "./log/apache2/access.log:/var/log/apache2/access.log:delegated"
             - "./log/apache2/error.log:/var/log/apache2/error.log:delegated"
         environment:
