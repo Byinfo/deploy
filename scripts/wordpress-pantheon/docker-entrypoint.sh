@@ -91,6 +91,7 @@ if [[ "$1" == apache2* ]] || [ "$1" == php-fpm ]; then
 		: "${WORDPRESS_DB_USER:=root}"
 		: "${WORDPRESS_DB_PASSWORD:=}"
 		: "${WORDPRESS_DB_NAME:=wordpress}"
+		: "${WORDPRESS_DEBUG:=${DEBUG:-}}"
 
 		# version 4.4.1 decided to switch to windows line endings, that breaks our seds and awks
 		# https://github.com/docker-library/wordpress/issues/116
@@ -98,7 +99,7 @@ if [[ "$1" == apache2* ]] || [ "$1" == php-fpm ]; then
 
 		if [ ! -e wp-config-local.php ]; then
 			DISABLE_WP_CRON="false"
-			if [ "$DEBUG" ]; then
+			if [ "$WORDPRESS_DEBUG" ]; then
 				DISABLE_WP_CRON="true"
 			fi
 			awk '/^\/\*.*stop editing.*\*\/\r?$/ && c == 0 { c = 1; system("cat") } { print }' wp-config-sample.php > wp-config-local.php <<EOPHP
@@ -166,7 +167,6 @@ EOPHP
 			set_config '$table_prefix' "$WORDPRESS_TABLE_PREFIX"
 		fi
 
-		: "${WORDPRESS_DEBUG:=${DEBUG:-}}"
 		if [ "$WORDPRESS_DEBUG" ]; then
 			set_config 'WP_DEBUG' 1 boolean
 			set_config 'WP_DEBUG_DISPLAY' 1 boolean
