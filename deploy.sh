@@ -122,6 +122,19 @@ function gitcmd() {
     fi
 }
 
+function self_update() {
+    # self-update
+    echo "Checking for a new version of me..."
+    git fetch
+    if [[ -n $(git diff --name-only origin/master) ]]; then
+        echo "Found a new version of me, updating..."
+        git reset --hard origin/master
+        echo "Restarting..."
+        exec "$0" "$@"
+        exit 1
+    fi
+}
+
 function display_usage {
     echo "Usage:"
     echo "    $0 ( prepare | up | down | status | sync-database | dump-database )"
@@ -139,16 +152,6 @@ if [[ $USERID == "0" ]]; then
     exit 1;
 fi
 
-# self-update
-echo "Checking for a new version of me..."
-git fetch
-if [[ -n $(git diff --name-only origin/master) ]]; then
-    echo "Found a new version of me, updating..."
-    git reset --hard origin/master
-    echo "Restarting..."
-    exec "$0" "$@"
-    exit 1
-fi
 
 source ./config
 
@@ -188,7 +191,7 @@ fi
 
 case $1 in
     prepare)
-
+        self_update
         if [[ $MYSQL_DOCKERFILE ]]; then
             envsubst < $MYSQL_DOCKERFILE | \
                 docker build -f - \
@@ -210,6 +213,7 @@ case $1 in
         envsubst < docker-compose.yml | docker-compose -p $PROJECT -f - "$@"
         ;;
     up)
+        self_update
         if [[ ! -d data/db ]]; then
             mkdir -p data/db/
         fi
