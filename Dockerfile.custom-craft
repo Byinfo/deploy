@@ -61,11 +61,10 @@ RUN { \
 
 RUN a2enmod rewrite expires
 
-COPY ./scripts/opencart/docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
-RUN chmod a+x /usr/local/bin/docker-entrypoint.sh
-
 RUN sed -ri -e 's!#ServerName .*!ServerName $PROJECT!' /etc/apache2/sites-enabled/000-default.conf
 RUN sed -ri -e 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/apache2.conf /etc/apache2/sites-enabled/*.conf
+
+RUN yarn global add grunt
 
 RUN gem install --no-rdoc --no-ri bundler
 RUN { \
@@ -111,5 +110,16 @@ RUN { \
 
 RUN bundle install --gemfile=/tmp/Gemfile
 
-#ENTRYPOINT ["docker-entrypoint.sh"]
+RUN { \
+    echo '#!/bin/bash'; \
+    echo 'export CRAFT_DB_SERVER="'$'MYSQL_HOST"'; \
+    echo 'export CRAFT_DB_SERVER="'$'MYSQL_HOST"'; \
+    echo 'export CRAFT_DB_USER="'$'MYSQL_USER"'; \
+    echo 'export CRAFT_DB_PASSWORD="'$'MYSQL_PASSWORD"'; \
+    echo 'export CRAFT_DB_NAME="'$'MYSQL_DATABASE"'; \
+    echo 'exec "''$''@"'; \
+} > /usr/local/bin/docker-entrypoint.sh
+RUN chmod a+x /usr/local/bin/docker-entrypoint.sh
+
+ENTRYPOINT ["docker-entrypoint.sh"]
 CMD ["apache2-foreground"]
