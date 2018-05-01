@@ -191,7 +191,7 @@ fi
 
 case $1 in
     prepare)
-        self_update
+        self_update "$@"
         if [[ $MYSQL_DOCKERFILE ]]; then
             envsubst < $MYSQL_DOCKERFILE | \
                 docker build -f - \
