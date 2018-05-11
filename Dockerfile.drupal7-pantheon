@@ -60,7 +60,7 @@ RUN { \
 
 RUN a2enmod rewrite expires proxy proxy_http proxy_ajp
 
-COPY ./scripts/drupal7/docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
+COPY ./scripts/drupal7-pantheon/docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
 RUN chmod a+x /usr/local/bin/docker-entrypoint.sh
 
 RUN sed -ri -e 's!#ServerName .*!ServerName $PROJECT!' /etc/apache2/sites-enabled/000-default.conf

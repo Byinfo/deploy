@@ -21,7 +21,7 @@ if [[ "$1" == apache2* ]] || [ "$1" == php-fpm ]; then
 
 	settingsf="/var/www/html/sites/default/local.settings.php";
 	if [ ! -f $settingsf ]; then
-		echo -e "<?php\n";
+		echo -e "<?php\n" > $settingsf;
 		if [ ! -z "${DEBUG:-}" ]; then
 			echo -e "\$conf['theme_debug'] = TRUE;\n" >> $settingsf
 		fi
