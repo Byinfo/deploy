@@ -204,7 +204,9 @@ case $1 in
                     -t $APP_IMAGE . || exit 1
         fi
 
-        get_latest_db_dump $BUCKET
+        if [[ $BUCKET ]]; then
+            get_latest_db_dump $BUCKET
+        fi
         if [[ ! -d webroot/.git ]]; then
             gitcmd clone $REPOSITORY webroot/
         fi
