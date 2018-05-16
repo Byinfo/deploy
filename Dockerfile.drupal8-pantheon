@@ -1,4 +1,4 @@
-FROM php:5.6-apache
+FROM php:7.0-apache
 
 ENV DEBIAN_FRONTEND noninteractive
 
@@ -66,6 +66,9 @@ RUN chmod a+x /usr/local/bin/docker-entrypoint.sh
 
 RUN sed -ri -e 's!#ServerName .*!ServerName $PROJECT!' /etc/apache2/sites-enabled/000-default.conf
 RUN sed -ri -e 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/apache2.conf /etc/apache2/sites-enabled/*.conf
+
+RUN (cd ~/ && (curl -s https://getcomposer.org/installer | php)) \
+    && ln -sf ~/composer.phar /usr/bin/composer
 
 ENTRYPOINT ["docker-entrypoint.sh"]
 CMD ["apache2-foreground"]
