@@ -109,7 +109,7 @@ function get_latest_db_dump_pantheon {
     FILENAME=${1:-latest.sql.gz}
     TERMINUSID=$(get_terminus_cli)
     docker run --rm -it -e HOME=/tmp -v "$PWD/mysql-init-script/:/mysql-init-script/" \
-        $TERMINUSID bash -c "terminus auth:login --machine-token=$PANTHEON_MACHINE_TOKEN && curl \$(terminus backup:get $PANTHEON_SITE_NAME --element=db) > /mysql-init-script/latest.sql.gz"
+        $TERMINUSID bash -c "terminus auth:login --machine-token=$PANTHEON_MACHINE_TOKEN && terminus backup:get $PANTHEON_SITE_NAME --element=db --to=/mysql-init-script/latest.sql.gz"
 }
 
 function get_latest_db_dump_aws() {
