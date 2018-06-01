@@ -74,21 +74,66 @@ ENTRYPOINT [\"git\"]
         . -q
 }
 
-function get_latest_db_dump() {
-    BUCKET=$1
-    FILENAME=${2:-latest.sql.gz}
+function get_terminus_cli() {
+    DOCKERFILE="
+FROM php:7.0-cli
+
+ENV DEBIAN_FRONTEND noninteractive
+
+ARG USERID
+ARG GROUPID
+
+RUN groupadd -g \$GROUPID mapped || groupmod -n mapped \$(getent group \$GROUPID | cut -d: -f1)
+RUN useradd \
+      --uid \$USERID \
+      --gid \$GROUPID \
+      --home-dir / \
+      mapped
+
+WORKDIR /
+
+RUN apt-get update
+RUN apt-get install -y curl unzip
+
+RUN curl -O https://raw.githubusercontent.com/pantheon-systems/terminus-installer/master/builds/installer.phar && php installer.phar install
+
+USER mapped
+"
+    echo "$DOCKERFILE" | docker build -f - \
+        --build-arg USERID=$USERID \
+        --build-arg GROUPID=$GROUPID \
+        . -q
+}
+
+function get_latest_db_dump_pantheon {
+    FILENAME=${1:-latest.sql.gz}
+    TERMINUSID=$(get_terminus_cli)
+    docker run --rm -it -e HOME=/tmp -v "$PWD/mysql-init-script/:/mysql-init-script/" \
+        $TERMINUSID bash -c "terminus auth:login --machine-token=$PANTHEON_MACHINE_TOKEN && terminus backup:get $PANTHEON_SITE_NAME --element=db --to=/mysql-init-script/latest.sql.gz"
+}
+
+function get_latest_db_dump_aws() {
+    FILENAME=${1:-latest.sql.gz}
+    AWSID=$(get_aws_cli)
+    echo "Downloading database dump from AWS..."
+    docker run --rm -it -v "$PWD/mysql-init-script/:/mysql-init-script/" \
+         -e AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID \
+         -e AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY \
+         -e AWS_DEFAULT_REGION=$AWS_REGION \
+         $AWSID \
+             aws s3 cp s3://$BUCKET/$FILENAME /mysql-init-script/$FILENAME
+}
+
+function get_latest_db_dump {
     if [[ ! -f mysql-init-script/latest.sql.gz ]]; then
-        AWSID=$(get_aws_cli)
-        echo "Downloading database dump from AWS..."
         if [[ ! -d mysql-init-script/ ]]; then
             mkdir mysql-init-script/
         fi
-        docker run --rm -it -v "$PWD/mysql-init-script/:/mysql-init-script/" \
-             -e AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID \
-             -e AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY \
-             -e AWS_DEFAULT_REGION=$AWS_REGION \
-             $AWSID \
-                 aws s3 cp s3://$BUCKET/$FILENAME /mysql-init-script/$FILENAME
+        if [[ $BUCKET ]]; then
+            get_latest_db_dump_aws
+        elif [[ $PANTHEON_SITE_NAME ]]; then
+            get_latest_db_dump_pantheon
+        fi
     fi
 }
 
@@ -188,10 +233,9 @@ else
     fi
 fi
 
-
 case $1 in
     prepare)
-        self_update
+        self_update "$@"
         if [[ $MYSQL_DOCKERFILE ]]; then
             envsubst < $MYSQL_DOCKERFILE | \
                 docker build -f - \
@@ -204,7 +248,7 @@ case $1 in
                     -t $APP_IMAGE . || exit 1
         fi
 
-        get_latest_db_dump $BUCKET
+        get_latest_db_dump
         if [[ ! -d webroot/.git ]]; then
             gitcmd clone $REPOSITORY webroot/
         fi
@@ -257,7 +301,7 @@ case $1 in
     sync-database)
         rm -rf data/
         rm -rf mysql-init-script/
-        get_latest_db_dump $BUCKET
+        get_latest_db_dump
         ;;
     upload)
         if [[ ! -d backup ]]; then

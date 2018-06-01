@@ -1,0 +1,76 @@
+FROM php:5.6-apache
+
+ENV DEBIAN_FRONTEND noninteractive
+
+RUN groupadd -g $GROUPID mapped || groupmod -n mapped $(getent group $GROUPID | cut -d: -f1)
+RUN useradd \
+      --uid $USERID \
+      --gid $GROUPID \
+      --home-dir /var/www/html/ \
+      mapped
+
+ENV APACHE_RUN_USER mapped
+ENV APACHE_RUN_GROUP mapped
+
+RUN apt-get update
+RUN apt-get install -y apt-transport-https apt-utils
+
+RUN curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg | apt-key add -
+RUN echo "deb https://dl.yarnpkg.com/debian/ stable main" > /etc/apt/sources.list.d/yarn.list
+
+RUN curl -sL https://deb.nodesource.com/setup_8.x | bash -
+
+RUN apt-get update
+RUN apt-get install -y \
+        libfreetype6-dev \
+        libjpeg62-turbo-dev \
+        libjpeg-dev \
+        libpng-dev \
+        libmagickwand-dev \
+        nodejs \
+        yarn \
+        git
+
+RUN yarn global add gulp
+
+RUN docker-php-ext-configure gd --with-png-dir=/usr --with-jpeg-dir=/usr
+RUN docker-php-ext-install -j$(nproc) gd pdo pdo_mysql opcache zip
+
+RUN pecl install imagick
+RUN docker-php-ext-enable imagick
+
+RUN { \
+    echo 'opcache.memory_consumption=64'; \
+    echo 'opcache.interned_strings_buffer=8'; \
+    echo 'opcache.max_accelerated_files=4000'; \
+    echo 'opcache.revalidate_freq=0'; \
+    echo 'opcache.fast_shutdown=1'; \
+    echo 'opcache.enable_cli=1'; \
+} > /usr/local/etc/php/conf.d/opcache-recommended.ini
+
+RUN { \
+    echo 'memory_limit=512M'; \
+    echo 'post_max_size=512M'; \
+    echo 'upload_max_filesize=512M'; \
+    echo 'error_reporting=E_ALL'; \
+    echo 'display_errors = On'; \
+    echo 'display_startup_errors = On'; \
+    echo 'log_errors = On'; \
+    echo 'log_errors_max_len = 0'; \
+    echo 'error_log = /dev/stderr'; \
+} > /usr/local/etc/php/conf.d/php.ini
+
+RUN (cd ~/ && (curl -s https://getcomposer.org/installer | php)) \
+    && ln -sf ~/composer.phar /usr/bin/composer \
+    && composer global require "fxp/composer-asset-plugin:~1.1.2" --no-plugins
+
+RUN a2enmod rewrite expires
+
+COPY ./scripts/yii2/docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
+RUN chmod a+x /usr/local/bin/docker-entrypoint.sh
+
+RUN sed -ri -e 's!#ServerName .*!ServerName $PROJECT!' /etc/apache2/sites-enabled/000-default.conf
+RUN sed -ri -e 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/apache2.conf /etc/apache2/sites-enabled/*.conf
+
+ENTRYPOINT ["docker-entrypoint.sh"]
+CMD ["apache2-foreground"]
