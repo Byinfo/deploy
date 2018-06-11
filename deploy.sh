@@ -245,13 +245,13 @@ case $1 in
     prepare)
         self_update "$@"
         if [[ $MYSQL_DOCKERFILE ]]; then
-            envsubst < $MYSQL_DOCKERFILE | \
+            envsubst \$USERID,\$GROUPID,\$PROJECT,\$APACHE_DOCUMENT_ROOT < $MYSQL_DOCKERFILE | \
                 docker build -f - \
                     -t $MYSQL_IMAGE . || exit 1
         fi
 
         if [[ $APP_DOCKERFILE ]]; then
-            envsubst < $APP_DOCKERFILE | \
+            envsubst \$USERID,\$GROUPID,\$PROJECT,\$APACHE_DOCUMENT_ROOT < $APP_DOCKERFILE | \
                 docker build -f - \
                     -t $APP_IMAGE . || exit 1
         fi
