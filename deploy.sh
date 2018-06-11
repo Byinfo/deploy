@@ -208,6 +208,14 @@ if [[ -z $MYSQL_IMAGE ]]; then
      MYSQL_DOCKERFILE=${MYSQL_DOCKERFILE:-Dockerfile.mysql}
 fi
 
+if [[ -z $MYSQL_PORT_MAP ]]; then
+     MYSQL_PORT_MAP="'3306:3306'"
+fi
+
+if [[ -z $APP_PORT_MAP ]]; then
+     APP_PORT_MAP="'80:80'"
+fi
+
 if [[ $MYSQL_DOCKERFILE ]]; then
      if [[ ! -e $MYSQL_DOCKERFILE ]]; then
          echo "MYSQL's Dockerfile '$MYSQL_DOCKERFILE' does not exist"

@@ -1,7 +1,7 @@
 APP_TYPE="wordpress"
 PROJECT="project"
 REPOSITORY="git@github.com:darwinapps/project.git"
-MACHINE_TOKEN="********************"
+PANTHEON_MACHINE_TOKEN="********************"
 PANTHEON_SITE_NAME="site_name.live"
 
 MYSQL_PORT_MAP="'3306:3306'"
