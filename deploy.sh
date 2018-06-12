@@ -208,6 +208,14 @@ if [[ -z $MYSQL_IMAGE ]]; then
      MYSQL_DOCKERFILE=${MYSQL_DOCKERFILE:-Dockerfile.mysql}
 fi
 
+if [[ -z $MYSQL_PORT_MAP ]]; then
+     MYSQL_PORT_MAP="'3306:3306'"
+fi
+
+if [[ -z $APP_PORT_MAP ]]; then
+     APP_PORT_MAP="'80:80'"
+fi
+
 if [[ $MYSQL_DOCKERFILE ]]; then
      if [[ ! -e $MYSQL_DOCKERFILE ]]; then
          echo "MYSQL's Dockerfile '$MYSQL_DOCKERFILE' does not exist"
@@ -237,13 +245,13 @@ case $1 in
     prepare)
         self_update "$@"
         if [[ $MYSQL_DOCKERFILE ]]; then
-            envsubst < $MYSQL_DOCKERFILE | \
+            envsubst \$USERID,\$GROUPID,\$PROJECT,\$APACHE_DOCUMENT_ROOT < $MYSQL_DOCKERFILE | \
                 docker build -f - \
                     -t $MYSQL_IMAGE . || exit 1
         fi
 
         if [[ $APP_DOCKERFILE ]]; then
-            envsubst < $APP_DOCKERFILE | \
+            envsubst \$USERID,\$GROUPID,\$PROJECT,\$APACHE_DOCUMENT_ROOT < $APP_DOCKERFILE | \
                 docker build -f - \
                     -t $APP_IMAGE . || exit 1
         fi
