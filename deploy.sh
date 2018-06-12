@@ -93,7 +93,10 @@ RUN useradd \
 WORKDIR /
 
 RUN apt-get update
-RUN apt-get install -y curl unzip
+RUN apt-get install -y \
+    curl \
+    unzip \
+    ssh
 
 RUN curl -O https://raw.githubusercontent.com/pantheon-systems/terminus-installer/master/builds/installer.phar && php installer.phar install
 
