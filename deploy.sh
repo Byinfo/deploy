@@ -171,8 +171,6 @@ function gitcmd() {
 }
 
 function self_update() {
-
-return
     # self-update
     echo "Checking for a new version of me..."
     git fetch
@@ -270,7 +268,7 @@ case $1 in
         envsubst < docker-compose.yml | docker-compose -p $PROJECT -f - "$@"
         ;;
     up)
-#        self_update
+        self_update "$@"
         if [[ ! -d data/db ]]; then
             mkdir -p data/db/
         fi
@@ -284,12 +282,10 @@ case $1 in
         touch log/apache2/access.log
         touch log/apache2/error.log
         touch log/mysql/error.log
-#        if [[ -d webroot/.git ]]; then
-            envsubst < docker-compose.yml | docker-compose -p $PROJECT -f - "$@"
-#        else
-#            display_usage
-#            exit 1
-#        fi
+        if [[ ! -d webroot/.git ]]; then
+            echo "Content in your webroot is not tracked by git"
+        fi
+        envsubst < docker-compose.yml | docker-compose -p $PROJECT -f - "$@"
         ;;
     status)
         envsubst < docker-compose.yml | docker-compose -p $PROJECT -f - ps
@@ -334,11 +330,6 @@ case $1 in
         ;;
     realclean)
         cat .gitignore | sed -e 's#^/#./#' | xargs rm -rf
-        ;;
-    test)
-        TERMINUSID=$(get_terminus_cli)
-        docker run --rm -it -e HOME=/tmp \
-            $TERMINUSID bash -c "terminus auth:login --machine-token=$PANTHEON_MACHINE_TOKEN && terminus wp betts-recruiting.dev -- media image-size"
         ;;
     *)
         display_usage
