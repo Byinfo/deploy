@@ -93,7 +93,7 @@ RUN useradd \
 WORKDIR /
 
 RUN apt-get update
-RUN apt-get install -y curl unzip
+RUN apt-get install -y curl unzip ssh
 
 RUN curl -O https://raw.githubusercontent.com/pantheon-systems/terminus-installer/master/builds/installer.phar && php installer.phar install
 
@@ -168,6 +168,8 @@ function gitcmd() {
 }
 
 function self_update() {
+
+return
     # self-update
     echo "Checking for a new version of me..."
     git fetch
@@ -265,7 +267,7 @@ case $1 in
         envsubst < docker-compose.yml | docker-compose -p $PROJECT -f - "$@"
         ;;
     up)
-        self_update
+#        self_update
         if [[ ! -d data/db ]]; then
             mkdir -p data/db/
         fi
@@ -279,12 +281,12 @@ case $1 in
         touch log/apache2/access.log
         touch log/apache2/error.log
         touch log/mysql/error.log
-        if [[ -d webroot/.git ]]; then
+#        if [[ -d webroot/.git ]]; then
             envsubst < docker-compose.yml | docker-compose -p $PROJECT -f - "$@"
-        else
-            display_usage
-            exit 1
-        fi
+#        else
+#            display_usage
+#            exit 1
+#        fi
         ;;
     status)
         envsubst < docker-compose.yml | docker-compose -p $PROJECT -f - ps
@@ -329,6 +331,11 @@ case $1 in
         ;;
     realclean)
         cat .gitignore | sed -e 's#^/#./#' | xargs rm -rf
+        ;;
+    test)
+        TERMINUSID=$(get_terminus_cli)
+        docker run --rm -it -e HOME=/tmp \
+            $TERMINUSID bash -c "terminus auth:login --machine-token=$PANTHEON_MACHINE_TOKEN && terminus wp betts-recruiting.dev -- media image-size"
         ;;
     *)
         display_usage
