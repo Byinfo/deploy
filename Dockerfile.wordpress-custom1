@@ -68,7 +68,7 @@ RUN chmod a+x /usr/local/bin/docker-entrypoint.sh
 RUN sed -ri -e 's!#ServerName .*!ServerName $PROJECT!' /etc/apache2/sites-enabled/000-default.conf
 RUN sed -ri -e 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/apache2.conf /etc/apache2/sites-enabled/*.conf
 
-RUN yarn global add grunt bower
+RUN yarn global add grunt gulp bower
 RUN gem install sass
 
 ENTRYPOINT ["docker-entrypoint.sh"]
