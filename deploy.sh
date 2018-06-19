@@ -112,7 +112,16 @@ function get_latest_db_dump_pantheon {
     FILENAME=${1:-latest.sql.gz}
     TERMINUSID=$(get_terminus_cli)
     docker run --rm -it -e HOME=/tmp -v "$PWD/mysql-init-script/:/mysql-init-script/" \
-        $TERMINUSID bash -c "terminus auth:login --machine-token=$PANTHEON_MACHINE_TOKEN && terminus backup:get $PANTHEON_SITE_NAME --element=db --to=/mysql-init-script/latest.sql.gz"
+        $TERMINUSID bash -c "terminus auth:login --machine-token=$PANTHEON_MACHINE_TOKEN && echo \"Downloading database ...\" && terminus -v backup:get $PANTHEON_SITE_NAME --element=db --to=/mysql-init-script/latest.sql.gz"
+}
+
+function get_latest_files_from_pantheon {
+    FILENAME=${1:-latest.tgz}
+    if [[ ! -f remote-files/latest.tgz ]]; then
+        TERMINUSID=$(get_terminus_cli)
+        docker run --rm -it -e HOME=/tmp -v "$PWD/remote-files/:/remote-files/" \
+            $TERMINUSID bash -c "terminus auth:login --machine-token=$PANTHEON_MACHINE_TOKEN && echo \"Downloading files ...\" && terminus -v backup:get $PANTHEON_SITE_NAME --element=files --to=/remote-files/latest.tgz"
+    fi
 }
 
 function get_latest_db_dump_aws() {
@@ -170,6 +179,15 @@ function gitcmd() {
     fi
 }
 
+function extract_remote_files() {
+    DIR=$1
+    STRIP=${2:-1}
+    if [[ -f remote-files/latest.tgz ]] && [[ $DIR ]] && [[ -d webroot/$DIR || -d $(dirname webroot/$DIR) ]]; then
+        mkdir -p webroot/$DIR
+        tar xf remote-files/latest.tgz -C webroot/$DIR --strip-components=$STRIP
+    fi
+}
+
 function self_update() {
     # self-update
     echo "Checking for a new version of me..."
@@ -185,7 +203,7 @@ function self_update() {
 
 function display_usage {
     echo "Usage:"
-    echo "    $0 ( prepare | up | down | status | sync-database | dump-database )"
+    echo "    $0 ( prepare | up | down | status | sync-database | sync-files | dump-database )"
     exit 1;
 }
 
@@ -260,9 +278,15 @@ case $1 in
         fi
 
         get_latest_db_dump
+
+        if [[ $PANTHEON_SITE_NAME ]] && [[ $FILES_DIR ]]; then
+            get_latest_files_from_pantheon
+        fi
+
         if [[ ! -d webroot/.git ]]; then
             gitcmd clone $REPOSITORY webroot/
         fi
+        extract_remote_files $FILES_DIR
         ;;
     down)
         envsubst < docker-compose.yml | docker-compose -p $PROJECT -f - "$@"
@@ -311,6 +335,16 @@ case $1 in
         rm -rf data/
         rm -rf mysql-init-script/
         get_latest_db_dump
+        ;;
+    sync-files)
+        if [[ $PANTHEON_SITE_NAME ]] && [[ $FILES_DIR ]]; then
+            rm -rf remote-files/
+            get_latest_files_from_pantheon
+            extract_remote_files $FILES_DIR
+        else
+            echo "File sync is supported for pantheon.io only"
+            exit 1;
+        fi
         ;;
     upload)
         if [[ ! -d backup ]]; then
