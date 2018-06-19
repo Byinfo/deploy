@@ -74,21 +74,78 @@ ENTRYPOINT [\"git\"]
         . -q
 }
 
-function get_latest_db_dump() {
-    BUCKET=$1
-    FILENAME=${2:-latest.sql.gz}
+function get_terminus_cli() {
+    DOCKERFILE="
+FROM php:7.0-cli
+
+ENV DEBIAN_FRONTEND noninteractive
+
+ARG USERID
+ARG GROUPID
+
+RUN groupadd -g \$GROUPID mapped || groupmod -n mapped \$(getent group \$GROUPID | cut -d: -f1)
+RUN useradd \
+      --uid \$USERID \
+      --gid \$GROUPID \
+      --home-dir / \
+      mapped
+
+WORKDIR /
+
+RUN apt-get update
+RUN apt-get install -y \
+    curl \
+    unzip \
+    ssh
+
+RUN curl -O https://raw.githubusercontent.com/pantheon-systems/terminus-installer/master/builds/installer.phar && php installer.phar install
+
+USER mapped
+"
+    echo "$DOCKERFILE" | docker build -f - \
+        --build-arg USERID=$USERID \
+        --build-arg GROUPID=$GROUPID \
+        . -q
+}
+
+function get_latest_db_dump_pantheon {
+    FILENAME=${1:-latest.sql.gz}
+    TERMINUSID=$(get_terminus_cli)
+    docker run --rm -it -e HOME=/tmp -v "$PWD/mysql-init-script/:/mysql-init-script/" \
+        $TERMINUSID bash -c "terminus auth:login --machine-token=$PANTHEON_MACHINE_TOKEN && echo \"Downloading database ...\" && terminus -v backup:get $PANTHEON_SITE_NAME --element=db --to=/mysql-init-script/latest.sql.gz"
+}
+
+function get_latest_files_from_pantheon {
+    FILENAME=${1:-latest.tgz}
+    if [[ ! -f remote-files/latest.tgz ]]; then
+        TERMINUSID=$(get_terminus_cli)
+        docker run --rm -it -e HOME=/tmp -v "$PWD/remote-files/:/remote-files/" \
+            $TERMINUSID bash -c "terminus auth:login --machine-token=$PANTHEON_MACHINE_TOKEN && echo \"Downloading files ...\" && terminus -v backup:get $PANTHEON_SITE_NAME --element=files --to=/remote-files/latest.tgz"
+    fi
+}
+
+function get_latest_db_dump_aws() {
+    FILENAME=${1:-latest.sql.gz}
+    AWSID=$(get_aws_cli)
+    echo "Downloading database dump from AWS..."
+    docker run --rm -it -v "$PWD/mysql-init-script/:/mysql-init-script/" \
+         -e AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID \
+         -e AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY \
+         -e AWS_DEFAULT_REGION=$AWS_REGION \
+         $AWSID \
+             aws s3 cp s3://$BUCKET/$FILENAME /mysql-init-script/$FILENAME
+}
+
+function get_latest_db_dump {
     if [[ ! -f mysql-init-script/latest.sql.gz ]]; then
-        AWSID=$(get_aws_cli)
-        echo "Downloading database dump from AWS..."
         if [[ ! -d mysql-init-script/ ]]; then
             mkdir mysql-init-script/
         fi
-        docker run --rm -it -v "$PWD/mysql-init-script/:/mysql-init-script/" \
-             -e AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID \
-             -e AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY \
-             -e AWS_DEFAULT_REGION=$AWS_REGION \
-             $AWSID \
-                 aws s3 cp s3://$BUCKET/$FILENAME /mysql-init-script/$FILENAME
+        if [[ $BUCKET ]]; then
+            get_latest_db_dump_aws
+        elif [[ $PANTHEON_SITE_NAME ]]; then
+            get_latest_db_dump_pantheon
+        fi
     fi
 }
 
@@ -137,7 +194,7 @@ function self_update() {
 
 function display_usage {
     echo "Usage:"
-    echo "    $0 ( prepare | up | down | status | sync-database | dump-database )"
+    echo "    $0 ( prepare | up | down | status | sync-database | sync-files | dump-database )"
     exit 1;
 }
 
@@ -161,6 +218,14 @@ APACHE_DOCUMENT_ROOT=/var/www/html/${APP_ROOT%/}
 
 if [[ -z $MYSQL_IMAGE ]]; then
      MYSQL_DOCKERFILE=${MYSQL_DOCKERFILE:-Dockerfile.mysql}
+fi
+
+if [[ -z $MYSQL_PORT_MAP ]]; then
+     MYSQL_PORT_MAP="'3306:3306'"
+fi
+
+if [[ -z $APP_PORT_MAP ]]; then
+     APP_PORT_MAP="'80:80'"
 fi
 
 if [[ $MYSQL_DOCKERFILE ]]; then
@@ -188,32 +253,40 @@ else
     fi
 fi
 
-
 case $1 in
     prepare)
         self_update "$@"
         if [[ $MYSQL_DOCKERFILE ]]; then
-            envsubst < $MYSQL_DOCKERFILE | \
+            envsubst \$USERID,\$GROUPID,\$PROJECT,\$APACHE_DOCUMENT_ROOT < $MYSQL_DOCKERFILE | \
                 docker build -f - \
                     -t $MYSQL_IMAGE . || exit 1
         fi
 
         if [[ $APP_DOCKERFILE ]]; then
-            envsubst < $APP_DOCKERFILE | \
+            envsubst \$USERID,\$GROUPID,\$PROJECT,\$APACHE_DOCUMENT_ROOT < $APP_DOCKERFILE | \
                 docker build -f - \
                     -t $APP_IMAGE . || exit 1
         fi
 
-        get_latest_db_dump $BUCKET
+        get_latest_db_dump
+
+        if [[ $PANTHEON_SITE_NAME ]] && [[ $FILES_DIR ]]; then
+            get_latest_files_from_pantheon
+        fi
+
         if [[ ! -d webroot/.git ]]; then
             gitcmd clone $REPOSITORY webroot/
+        fi
+
+        if [[ -f remote-files/latest.tgz ]] && [[ $FILES_DIR ]] && [[ -d webroot/$FILES_DIR ]]; then
+            tar xf remote-files/latest.tgz -C webroot/$FILES_DIR --strip-components=1
         fi
         ;;
     down)
         envsubst < docker-compose.yml | docker-compose -p $PROJECT -f - "$@"
         ;;
     up)
-        self_update
+        self_update "$@"
         if [[ ! -d data/db ]]; then
             mkdir -p data/db/
         fi
@@ -227,12 +300,10 @@ case $1 in
         touch log/apache2/access.log
         touch log/apache2/error.log
         touch log/mysql/error.log
-        if [[ -d webroot/.git ]]; then
-            envsubst < docker-compose.yml | docker-compose -p $PROJECT -f - "$@"
-        else
-            display_usage
-            exit 1
+        if [[ ! -d webroot/.git ]]; then
+            echo "Content in your webroot is not tracked by git"
         fi
+        envsubst < docker-compose.yml | docker-compose -p $PROJECT -f - "$@"
         ;;
     status)
         envsubst < docker-compose.yml | docker-compose -p $PROJECT -f - ps
@@ -257,7 +328,19 @@ case $1 in
     sync-database)
         rm -rf data/
         rm -rf mysql-init-script/
-        get_latest_db_dump $BUCKET
+        get_latest_db_dump
+        ;;
+    sync-files)
+        if [[ $PANTHEON_SITE_NAME ]] && [[ $FILES_DIR ]] && [[ -d webroot/$FILES_DIR ]]; then
+            rm -rf remote-files/
+            get_latest_files_from_pantheon
+            if [[ -f remote-files/latest.tgz ]]; then
+                tar xf remote-files/latest.tgz -C webroot/$FILES_DIR --strip-components=1
+            fi
+        else
+            echo "File sync is supported for pantheon.io only"
+            exit 1;
+        fi
         ;;
     upload)
         if [[ ! -d backup ]]; then
