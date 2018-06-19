@@ -112,7 +112,7 @@ function get_latest_db_dump_pantheon {
     FILENAME=${1:-latest.sql.gz}
     TERMINUSID=$(get_terminus_cli)
     docker run --rm -it -e HOME=/tmp -v "$PWD/mysql-init-script/:/mysql-init-script/" \
-        $TERMINUSID bash -c "terminus auth:login --machine-token=$PANTHEON_MACHINE_TOKEN && terminus -v backup:get $PANTHEON_SITE_NAME --element=db --to=/mysql-init-script/latest.sql.gz"
+        $TERMINUSID bash -c "terminus auth:login --machine-token=$PANTHEON_MACHINE_TOKEN && echo \"Downloading database ...\" && terminus -v backup:get $PANTHEON_SITE_NAME --element=db --to=/mysql-init-script/latest.sql.gz"
 }
 
 function get_latest_files_from_pantheon {
@@ -120,7 +120,7 @@ function get_latest_files_from_pantheon {
     if [[ ! -f remote-files/latest.tgz ]]; then
         TERMINUSID=$(get_terminus_cli)
         docker run --rm -it -e HOME=/tmp -v "$PWD/remote-files/:/remote-files/" \
-            $TERMINUSID bash -c "terminus auth:login --machine-token=$PANTHEON_MACHINE_TOKEN && terminus -v backup:get $PANTHEON_SITE_NAME --element=files --to=/remote-files/latest.tgz"
+            $TERMINUSID bash -c "terminus auth:login --machine-token=$PANTHEON_MACHINE_TOKEN && echo \"Downloading files ...\" && terminus -v backup:get $PANTHEON_SITE_NAME --element=files --to=/remote-files/latest.tgz"
     fi
 }
 
