@@ -179,6 +179,15 @@ function gitcmd() {
     fi
 }
 
+function extract_remote_files() {
+    DIR=$1
+    STRIP=${2:-1}
+    if [[ -f remote-files/latest.tgz ]] && [[ $DIR ]] && [[ -d webroot/$DIR || -d $(dirname webroot/$DIR) ]]; then
+        mkdir -p webroot/$DIR
+        tar xf remote-files/latest.tgz -C webroot/$DIR --strip-components=$STRIP
+    fi
+}
+
 function self_update() {
     # self-update
     echo "Checking for a new version of me..."
@@ -277,10 +286,7 @@ case $1 in
         if [[ ! -d webroot/.git ]]; then
             gitcmd clone $REPOSITORY webroot/
         fi
-
-        if [[ -f remote-files/latest.tgz ]] && [[ $FILES_DIR ]] && [[ -d webroot/$FILES_DIR ]]; then
-            tar xf remote-files/latest.tgz -C webroot/$FILES_DIR --strip-components=1
-        fi
+        extract_remote_files $FILES_DIR
         ;;
     down)
         envsubst < docker-compose.yml | docker-compose -p $PROJECT -f - "$@"
@@ -331,12 +337,10 @@ case $1 in
         get_latest_db_dump
         ;;
     sync-files)
-        if [[ $PANTHEON_SITE_NAME ]] && [[ $FILES_DIR ]] && [[ -d webroot/$FILES_DIR ]]; then
+        if [[ $PANTHEON_SITE_NAME ]] && [[ $FILES_DIR ]]; then
             rm -rf remote-files/
             get_latest_files_from_pantheon
-            if [[ -f remote-files/latest.tgz ]]; then
-                tar xf remote-files/latest.tgz -C webroot/$FILES_DIR --strip-components=1
-            fi
+            extract_remote_files $FILES_DIR
         else
             echo "File sync is supported for pantheon.io only"
             exit 1;
