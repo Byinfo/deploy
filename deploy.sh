@@ -194,7 +194,7 @@ function self_update() {
 
 function display_usage {
     echo "Usage:"
-    echo "    $0 ( prepare | up | down | status | sync-database | dump-database )"
+    echo "    $0 ( prepare | up | down | status | sync-database | sync-files | dump-database )"
     exit 1;
 }
 
@@ -269,16 +269,17 @@ case $1 in
         fi
 
         get_latest_db_dump
-        if [[ $PANTHEON_SITE_NAME ]]; then
-            get_latest_files_from_pantheon
-        fi
 
-        if [[ -f remote-files/latest.tgz ]]; then
-            tar xf remote-files/latest.tgz -C webroot/sites/default/files --strip-components=1
+        if [[ $PANTHEON_SITE_NAME ]] && [[ $FILES_DIR ]]; then
+            get_latest_files_from_pantheon
         fi
 
         if [[ ! -d webroot/.git ]]; then
             gitcmd clone $REPOSITORY webroot/
+        fi
+
+        if [[ -f remote-files/latest.tgz ]] && [[ $FILES_DIR ]] && [[ -d webroot/$FILES_DIR ]]; then
+            tar xf remote-files/latest.tgz -C webroot/$FILES_DIR --strip-components=1
         fi
         ;;
     down)
@@ -330,10 +331,12 @@ case $1 in
         get_latest_db_dump
         ;;
     sync-files)
-        if [[ $PANTHEON_SITE_NAME ]]; then
+        if [[ $PANTHEON_SITE_NAME ]] && [[ $FILES_DIR ]] && [[ -d webroot/$FILES_DIR ]]; then
             rm -rf remote-files/
             get_latest_files_from_pantheon
-            tar xf remote-files/latest.tgz -C webroot/sites/default/files --strip-components=1
+            if [[ -f remote-files/latest.tgz ]]; then
+                tar xf remote-files/latest.tgz -C webroot/$FILES_DIR --strip-components=1
+            fi
         else
             echo "File sync is supported for pantheon.io only"
             exit 1;
