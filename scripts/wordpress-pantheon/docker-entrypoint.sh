@@ -102,7 +102,12 @@ if [[ "$1" == apache2* ]] || [ "$1" == php-fpm ]; then
 			if [ "$WORDPRESS_DEBUG" ]; then
 				DISABLE_WP_CRON="true"
 			fi
-			awk '/^\/\*.*stop editing.*\*\/\r?$/ && c == 0 { c = 1; system("cat") } { print }' wp-config-sample.php > wp-config-local.php <<EOPHP
+			sed -e '/^\/\*.*stop editing/,$d' wp-config-sample.php > wp-config-local.php 
+			cat >> wp-config-local.php <<EOPHP
+define( 'WP_DEBUG_DISPLAY', false);
+define( 'WP_DEBUG_LOG', true);
+define( 'DISABLE_WP_CRON', ${DISABLE_WP_CRON});
+
 // If we're behind a proxy server and using HTTPS, we need to alert Wordpress of that fact
 // see also http://codex.wordpress.org/Administration_Over_SSL#Using_a_Reverse_Proxy
 if (isset(\$_SERVER['HTTP_X_FORWARDED_PROTO']) && \$_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https') {
@@ -111,10 +116,10 @@ if (isset(\$_SERVER['HTTP_X_FORWARDED_PROTO']) && \$_SERVER['HTTP_X_FORWARDED_PR
 
 define( 'WP_HOME', 'http://' . \$_SERVER['HTTP_HOST'] . '/');
 define( 'WP_SITEURL', 'http://' . \$_SERVER['HTTP_HOST'] . '/');
-define( 'DISABLE_WP_CRON', ${DISABLE_WP_CRON});
 
 EOPHP
 			sed -ri -e 's/\r$//' wp-config-local.php
+			sed -ri -e 's/^\/\*.*stop editing.*//m' wp-config-local.php
 			chown "$user:$group" wp-config-local.php
 		fi
 
@@ -169,8 +174,6 @@ EOPHP
 
 		if [ "$WORDPRESS_DEBUG" ]; then
 			set_config 'WP_DEBUG' 1 boolean
-			set_config 'WP_DEBUG_DISPLAY' 1 boolean
-			set_config 'WP_DEBUG_LOG' 1 boolean
 			set_config 'MNFST_DEV' 1 boolean
 			set_config 'MNFST_TM_STMP' 1 boolean
 		fi
