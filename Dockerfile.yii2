@@ -13,7 +13,7 @@ ENV APACHE_RUN_USER mapped
 ENV APACHE_RUN_GROUP mapped
 
 RUN apt-get update
-RUN apt-get install -y apt-transport-https apt-utils
+RUN apt-get install -y apt-transport-https apt-utils gnupg
 
 RUN curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg | apt-key add -
 RUN echo "deb https://dl.yarnpkg.com/debian/ stable main" > /etc/apt/sources.list.d/yarn.list
@@ -71,6 +71,8 @@ RUN chmod a+x /usr/local/bin/docker-entrypoint.sh
 
 RUN sed -ri -e 's!#ServerName .*!ServerName $PROJECT!' /etc/apache2/sites-enabled/000-default.conf
 RUN sed -ri -e 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/apache2.conf /etc/apache2/sites-enabled/*.conf
+
+RUN apt-get install -y imagemagick-6.q16
 
 ENTRYPOINT ["docker-entrypoint.sh"]
 CMD ["apache2-foreground"]
