@@ -189,7 +189,6 @@ function extract_remote_files() {
 }
 
 function self_update() {
-return
     # self-update
     echo "Checking for a new version of me..."
     git fetch
