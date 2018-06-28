@@ -13,7 +13,7 @@ ENV APACHE_RUN_USER mapped
 ENV APACHE_RUN_GROUP mapped
 
 RUN apt-get update
-RUN apt-get install -y apt-transport-https apt-utils
+RUN apt-get install -y apt-transport-https apt-utils gnupg
 
 RUN curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg | apt-key add -
 RUN echo "deb https://dl.yarnpkg.com/debian/ stable main" > /etc/apt/sources.list.d/yarn.list
@@ -30,6 +30,10 @@ RUN apt-get install -y \
         nodejs \
         yarn \
         git
+
+RUN curl -sOL 'https://downloads.sourceforge.net/project/imagemagick/old-sources/6.x/6.7/ImageMagick-6.7.7-10.tar.gz'
+RUN tar xvf ImageMagick-6.7.7-10.tar.gz
+RUN (cd ImageMagick-6.7.7-10 && ./configure && make && make install)
 
 RUN yarn global add gulp
 
@@ -49,15 +53,17 @@ RUN { \
 } > /usr/local/etc/php/conf.d/opcache-recommended.ini
 
 RUN { \
+    echo 'short_open_tag=Off'; \
     echo 'memory_limit=512M'; \
     echo 'post_max_size=512M'; \
     echo 'upload_max_filesize=512M'; \
     echo 'error_reporting=E_ALL'; \
-    echo 'display_errors = On'; \
-    echo 'display_startup_errors = On'; \
-    echo 'log_errors = On'; \
-    echo 'log_errors_max_len = 0'; \
-    echo 'error_log = /dev/stderr'; \
+    echo 'display_errors=On'; \
+    echo 'display_startup_errors=On'; \
+    echo 'log_errors=On'; \
+    echo 'log_errors_max_len=0'; \
+    echo 'error_log=/dev/stderr'; \
+    echo 'date.timezone = "UTC"'; \
 } > /usr/local/etc/php/conf.d/php.ini
 
 RUN (cd ~/ && (curl -s https://getcomposer.org/installer | php)) \
