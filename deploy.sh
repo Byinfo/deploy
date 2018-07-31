@@ -284,7 +284,8 @@ case $1 in
         fi
 
         if [[ ! -d webroot/.git ]]; then
-            gitcmd clone $REPOSITORY webroot/
+            gitcmd clone --recurse-submodules $REPOSITORY webroot/
+            (cd webroot/ && gitcmd submodule foreach git checkout master)
         fi
         extract_remote_files $FILES_DIR
         ;;
