@@ -22,10 +22,15 @@ if [[ "$1" == apache2* ]] || [ "$1" == php-fpm ]; then
 	settingsf="/var/www/html/sites/default/settings.local.php";
 	if [ ! -f $settingsf ]; then
 		echo -e "<?php\n" > $settingsf;
-#		if [ ! -z "${DEBUG:-}" ]; then
-#			echo -e "\$conf['theme_debug'] = TRUE;\n" >> $settingsf
-#		fi
-		echo -e "\$databases['default']['default'] = array(\n" \
+		echo -e "assert_options(ASSERT_ACTIVE, TRUE);\n" \
+			"\Drupal\Component\Assertion\Handle::register();\n" \
+			"\$settings['container_yamls'][] = DRUPAL_ROOT . '/sites/development.services.yml'\n" \
+			"\$settings['cache']['bins']['render'] = 'cache.backend.null';\n" \
+			"\$settings['cache']['bins']['dynamic_page_cache'] = 'cache.backend.null';\n" \
+			"\$settings['cache']['bins']['page'] = 'cache.backend.null';\n" \
+			"\$config['system.performance']['css']['preprocess'] = false;\n" \
+			"\$config['system.performance']['js']['preprocess'] = false;\n" \
+			"\$databases['default']['default'] = array(\n" \
 			"  'driver' => 'mysql',\n" \
 			"  'database' => '${MYSQL_DATABASE}',\n" \
 			"  'username' => '${MYSQL_USER}',\n" \
