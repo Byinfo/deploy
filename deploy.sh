@@ -3,7 +3,7 @@
 set -o pipefail
 
 function get_aws_cli() {
-    DOCKERFILE="
+    DOCKERFILE='
 FROM debian:stable-slim
 
 ENV DEBIAN_FRONTEND noninteractive
@@ -11,10 +11,10 @@ ENV DEBIAN_FRONTEND noninteractive
 ARG USERID
 ARG GROUPID
 
-RUN groupadd -g \$GROUPID mapped || groupmod -n mapped \$(getent group \$GROUPID | cut -d: -f1)
+RUN groupadd -g $GROUPID mapped || groupmod -n mapped $(getent group $GROUPID | cut -d: -f1)
 RUN useradd \
-      --uid \$USERID \
-      --gid \$GROUPID \
+      --uid $USERID \
+      --gid $GROUPID \
       --home-dir / \
       mapped
 
@@ -30,7 +30,7 @@ RUN pip install --upgrade pip && \
     pip install awscli
 
 USER mapped
-"
+'
     echo "$DOCKERFILE" | docker build -f - \
         --build-arg USERID=$USERID \
         --build-arg GROUPID=$GROUPID \
