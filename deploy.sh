@@ -75,7 +75,7 @@ ENTRYPOINT [\"git\"]
 }
 
 function get_terminus_cli() {
-    DOCKERFILE="
+    DOCKERFILE='
 FROM php:7.0-cli
 
 ENV DEBIAN_FRONTEND noninteractive
@@ -83,10 +83,10 @@ ENV DEBIAN_FRONTEND noninteractive
 ARG USERID
 ARG GROUPID
 
-RUN groupadd -g \$GROUPID mapped || groupmod -n mapped \$(getent group \$GROUPID | cut -d: -f1)
+RUN groupadd -g $GROUPID mapped || groupmod -n mapped $(getent group $GROUPID | cut -d: -f1)
 RUN useradd \
-      --uid \$USERID \
-      --gid \$GROUPID \
+      --uid $USERID \
+      --gid $GROUPID \
       --home-dir / \
       mapped
 
@@ -101,7 +101,8 @@ RUN apt-get install -y \
 RUN curl -O https://raw.githubusercontent.com/pantheon-systems/terminus-installer/master/builds/installer.phar && php installer.phar install
 
 USER mapped
-"
+'
+
     echo "$DOCKERFILE" | docker build -f - \
         --build-arg USERID=$USERID \
         --build-arg GROUPID=$GROUPID \
