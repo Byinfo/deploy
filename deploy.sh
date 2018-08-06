@@ -190,6 +190,7 @@ function extract_remote_files() {
 }
 
 function self_update() {
+    return
     # self-update
     echo "Checking for a new version of me..."
     git fetch
@@ -268,15 +269,22 @@ case $1 in
     prepare)
         self_update "$@"
         if [[ $MYSQL_DOCKERFILE ]]; then
-            envsubst \$USERID,\$GROUPID,\$PROJECT,\$APACHE_DOCUMENT_ROOT < $MYSQL_DOCKERFILE | \
-                docker build -f - \
-                    -t $MYSQL_IMAGE . || exit 1
+            docker build \
+                --build-arg USERID=$USERID \
+                --build-arg GROUPID=$GROUPID \
+                -f $MYSQL_DOCKERFILE \
+                -t $MYSQL_IMAGE . || exit 1
         fi
 
         if [[ $APP_DOCKERFILE ]]; then
-            envsubst \$USERID,\$GROUPID,\$PROJECT,\$APACHE_DOCUMENT_ROOT < $APP_DOCKERFILE | \
-                docker build -f - \
-                    -t $APP_IMAGE . || exit 1
+            cat Dockerfile.app $APP_DOCKERFILE | docker build \
+                --build-arg USERID=$USERID \
+                --build-arg GROUPID=$GROUPID \
+                --build-arg PROJECT=$PROJECT \
+                --build-arg APP_TYPE=$APP_TYPE \
+                --build-arg APACHE_DOCUMENT_ROOT=$APACHE_DOCUMENT_ROOT \
+                -f - \
+                -t $APP_IMAGE . || exit 1
         fi
 
         get_latest_db_dump
