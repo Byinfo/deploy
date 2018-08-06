@@ -22,12 +22,13 @@ RUN apt-get install -y --no-install-recommends apt-transport-https apt-utils gnu
 RUN apt-get install -y --no-install-recommends \
     libjpeg-dev \
     libpng-dev \
-    libgeoip-dev
+    libgeoip-dev \
+    libmcrypt-dev
 
 # NATIVE
 RUN docker-php-ext-configure gd --with-png-dir=/usr --with-jpeg-dir=/usr
 RUN docker-php-ext-configure mcrypt
-RUN docker-php-ext-install -j$(nproc) gd mysqli pdo_mysql opcache mcrypt
+RUN docker-php-ext-install -j$(nproc) gd mysqli pdo_mysql opcache mcrypt zip
 
 # PECL
 RUN pecl install geoip-1.1.1
@@ -59,6 +60,8 @@ RUN { \
 RUN a2enmod rewrite expires
 RUN sed -ri -e "s!#ServerName .*!ServerName $PROJECT!" /etc/apache2/sites-enabled/000-default.conf
 RUN sed -ri -e "s!/var/www/html!${APACHE_DOCUMENT_ROOT}!g" /etc/apache2/apache2.conf /etc/apache2/sites-enabled/*.conf
+
+RUN mkdir -p /usr/share/GeoIP/ && curl -s http://geolite.maxmind.com/download/geoip/database/GeoLiteCity.dat.gz | gunzip - > /usr/share/GeoIP/GeoIPCity.dat
 
 COPY scripts/${APP_TYPE}/docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
 RUN chmod a+x /usr/local/bin/docker-entrypoint.sh
