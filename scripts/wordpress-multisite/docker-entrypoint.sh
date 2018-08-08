@@ -106,6 +106,7 @@ if [[ "$1" == apache2* ]] || [ "$1" == php-fpm ]; then
 define( 'DISABLE_WP_CRON', ${DISABLE_WP_CRON});
 define( 'WP_DEBUG_DISPLAY', false);
 define( 'WP_DEBUG_LOG', true);
+define( 'SUNRISE', true);
 
 // If we're behind a proxy server and using HTTPS, we need to alert Wordpress of that fact
 // see also http://codex.wordpress.org/Administration_Over_SSL#Using_a_Reverse_Proxy
