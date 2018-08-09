@@ -1,0 +1,6 @@
+version: '3.1'
+
+services:
+    webapp:
+        ports:
+            - $APP_PORT_MAP
