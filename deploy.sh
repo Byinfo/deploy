@@ -245,6 +245,10 @@ if [[ $APP_PORT_MAP ]]; then
      DOCKER_COMPOSE_ARGS+=("-f" "docker-compose-app.yml")
 fi
 
+if [[ $APP_NETWORK ]]; then
+     DOCKER_COMPOSE_ARGS+=("-f" "docker-compose-app-network.yml")
+fi
+
 case $1 in
     prepare)
         self_update "$@"
