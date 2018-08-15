@@ -1,21 +1,6 @@
 FROM php:7.0-apache
 
-ARG USERID
-ARG GROUPID
-ARG PROJECT
-ARG APP_TYPE
-ARG APACHE_DOCUMENT_ROOT
-ENV APACHE_RUN_USER mapped
-ENV APACHE_RUN_GROUP mapped
-
 ENV DEBIAN_FRONTEND noninteractive
-
-RUN groupadd -g $GROUPID mapped || groupmod -n mapped $(getent group $GROUPID | cut -d: -f1)
-RUN useradd \
-      --uid $USERID \
-      --gid $GROUPID \
-      --home-dir /var/www/html/ \
-      mapped
 
 RUN apt-get update
 RUN apt-get install -y --no-install-recommends apt-transport-https apt-utils gnupg
@@ -58,14 +43,43 @@ RUN { \
 } > /usr/local/etc/php/conf.d/php.ini
 
 RUN a2enmod rewrite expires
-RUN sed -ri -e "s!#ServerName .*!ServerName $PROJECT!" /etc/apache2/sites-enabled/000-default.conf
-RUN sed -ri -e "s!/var/www/html!${APACHE_DOCUMENT_ROOT}!g" /etc/apache2/apache2.conf /etc/apache2/sites-enabled/*.conf
-
 RUN mkdir -p /usr/share/GeoIP/ && curl -s http://geolite.maxmind.com/download/geoip/database/GeoLiteCity.dat.gz | gunzip - > /usr/share/GeoIP/GeoIPCity.dat
 
+RUN (cd ~/ && (curl -s https://getcomposer.org/installer | php)) \
+    && ln -sf ~/composer.phar /usr/bin/composer
+
+# --- fixing user permissions
+
+ARG USERID
+ARG GROUPID
+
+RUN groupadd -g $GROUPID mapped || groupmod -n mapped $(getent group $GROUPID | cut -d: -f1)
+RUN useradd \
+      --uid $USERID \
+      --gid $GROUPID \
+      --home-dir /var/www/html/ \
+      mapped
+
+# -- end fixing user permissions
+
+# --- app-type related code
+
+ARG APP_TYPE
 COPY scripts/${APP_TYPE}/docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
 RUN chmod a+x /usr/local/bin/docker-entrypoint.sh
 
+# -- end app-type related code
+
 ENTRYPOINT ["docker-entrypoint.sh"]
 CMD ["apache2-foreground"]
+
+ENV APACHE_RUN_USER mapped
+ENV APACHE_RUN_GROUP mapped
+
+ARG PROJECT
+ARG APACHE_DOCUMENT_ROOT
+
+RUN sed -ri -e "s!#ServerName .*!ServerName $PROJECT!" /etc/apache2/sites-enabled/000-default.conf
+RUN sed -ri -e "s!/var/www/html!${APACHE_DOCUMENT_ROOT}!g" /etc/apache2/apache2.conf /etc/apache2/sites-enabled/*.conf
+
 
