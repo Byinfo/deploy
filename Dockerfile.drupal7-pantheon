@@ -1,2 +1,0 @@
-RUN (cd ~/ && (curl -s https://getcomposer.org/installer | php)) \
-    && ln -sf ~/composer.phar /usr/bin/composer
