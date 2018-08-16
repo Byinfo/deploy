@@ -22,6 +22,8 @@ services:
             - "./log/apache2/access.log:/var/log/apache2/access.log:delegated"
             - "./log/apache2/error.log:/var/log/apache2/error.log:delegated"
         environment:
+            DOCKERIZED: 1
+            APP_ROOT: $APP_ROOT
             MYSQL_PASSWORD: $MYSQL_PASSWORD
             MYSQL_USER: $MYSQL_USER
             MYSQL_DATABASE: $MYSQL_DATABASE
