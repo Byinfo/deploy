@@ -223,13 +223,18 @@ fi
 source ./config
 
 MYSQL_CONTAINER="$PROJECT-mysql"
-APP_CONTAINER="$PROJECT-app"
-APACHE_DOCUMENT_ROOT=/var/www/html/${APP_ROOT%/}
-DOCKER_COMPOSE_ARGS=("-f" "docker-compose.yml")
+MYSQL_IMAGE=$MYSQL_CONTAINER
+MYSQL_DOCKERFILE=${MYSQL_DOCKERFILE:-Dockerfile.mysql}
 
-if [[ -z $MYSQL_IMAGE ]]; then
-     MYSQL_DOCKERFILE=${MYSQL_DOCKERFILE:-Dockerfile.mysql}
+APP_CONTAINER="$PROJECT-app"
+APP_IMAGE=$APP_CONTAINER
+APP_DOCKERFILES=("Dockerfile.app")
+if [[ -e "Dockerfile.${APP_TYPE}" ]]; then
+    APP_DOCKERFILES+=("Dockerfile.${APP_TYPE}")
 fi
+APACHE_DOCUMENT_ROOT=/var/www/html/${APP_ROOT%/}
+
+DOCKER_COMPOSE_ARGS=("-f" "docker-compose.yml")
 
 if [[ $MYSQL_PORT_MAP ]]; then
      DOCKER_COMPOSE_ARGS+=("-f" "docker-compose-mysql.yml")
@@ -239,45 +244,30 @@ if [[ $APP_PORT_MAP ]]; then
      DOCKER_COMPOSE_ARGS+=("-f" "docker-compose-app.yml")
 fi
 
-if [[ $MYSQL_DOCKERFILE ]]; then
-     if [[ ! -e $MYSQL_DOCKERFILE ]]; then
-         echo "MYSQL's Dockerfile '$MYSQL_DOCKERFILE' does not exist"
-         exit 1
-     fi
-     MYSQL_IMAGE=$MYSQL_CONTAINER
-fi
-
-if [[ $APP_DOCKERFILE ]]; then
-     if [[ ! -e $APP_DOCKERFILE ]]; then
-         echo "App's Dockerfile '$APP_DOCKERFILE' does not exist"
-         exit 1
-     fi
-     APP_IMAGE=$APP_CONTAINER
-else
-    if [[ -z $APP_IMAGE ]]; then
-        APP_DOCKERFILE="Dockerfile.${APP_TYPE}"
-        APP_IMAGE=$APP_CONTAINER
-        if [[ ! -e $APP_DOCKERFILE ]]; then
-            echo "Unsupported project type '$APP_TYPE'"
-            exit 1
-        fi
-    fi
+if [[ $APP_NETWORK ]]; then
+     DOCKER_COMPOSE_ARGS+=("-f" "docker-compose-app-network.yml")
 fi
 
 case $1 in
     prepare)
         self_update "$@"
+
         if [[ $MYSQL_DOCKERFILE ]]; then
-            envsubst \$USERID,\$GROUPID,\$PROJECT,\$APACHE_DOCUMENT_ROOT < $MYSQL_DOCKERFILE | \
-                docker build -f - \
-                    -t $MYSQL_IMAGE . || exit 1
+            docker build \
+                --build-arg USERID=$USERID \
+                --build-arg GROUPID=$GROUPID \
+                -f $MYSQL_DOCKERFILE \
+                -t $MYSQL_IMAGE . || exit 1
         fi
 
-        if [[ $APP_DOCKERFILE ]]; then
-            envsubst \$USERID,\$GROUPID,\$PROJECT,\$APACHE_DOCUMENT_ROOT < $APP_DOCKERFILE | \
-                docker build -f - \
-                    -t $APP_IMAGE . || exit 1
-        fi
+        cat ${APP_DOCKERFILES[@]} | docker build \
+            --build-arg USERID=$USERID \
+            --build-arg GROUPID=$GROUPID \
+            --build-arg PROJECT=$PROJECT \
+            --build-arg APP_TYPE=$APP_TYPE \
+            --build-arg APACHE_DOCUMENT_ROOT=$APACHE_DOCUMENT_ROOT \
+            -f - \
+            -t $APP_IMAGE . || exit 1
 
         get_latest_db_dump
 
