@@ -119,6 +119,9 @@ function get_latest_db_dump_pantheon {
 function get_latest_files_from_pantheon {
     FILENAME=${1:-latest.tgz}
     if [[ ! -f remote-files/latest.tgz ]]; then
+        if [[ ! -d remote-files/ ]]; then
+            mkdir remote-files/
+        fi
         TERMINUSID=$(get_terminus_cli)
         docker run --rm -it -e HOME=/tmp -v "$PWD/remote-files/:/remote-files/" \
             $TERMINUSID bash -c "terminus auth:login --machine-token=$PANTHEON_MACHINE_TOKEN && echo \"Downloading files ...\" && terminus -v backup:get $PANTHEON_SITE_NAME --element=files --to=/remote-files/latest.tgz"
