@@ -4,9 +4,9 @@ REPOSITORY="git@github.com:darwinapps/project.git"
 PANTHEON_MACHINE_TOKEN="********************"
 PANTHEON_SITE_NAME="site_name.live"
 
-MYSQL_PORT_MAP="'3306:3306'"
+MYSQL_PORT_MAP=3306:3306
 APP_ROOT="" # relative to ./webroot/, no leading slash, with ending slash
-APP_PORT_MAP="'80:80'"
+APP_PORT_MAP=80:80
 
 MYSQL_USER=wordpress
 MYSQL_PASSWORD=wordpress
