@@ -278,7 +278,7 @@ case $1 in
             get_latest_files_from_pantheon
         fi
 
-        if [[ ! -d webroot/.git ]]; then
+        if [[ $REPOSITORY ]] &&[[ ! -d webroot/.git ]]; then
             gitcmd clone --recurse-submodules $REPOSITORY webroot/
             (cd webroot/ && gitcmd submodule foreach git checkout master)
         fi
@@ -321,7 +321,7 @@ case $1 in
         ;;
     dump-database)
         if [[ $(docker ps -f id=$(docker-compose -p $PROJECT ${DOCKER_COMPOSE_ARGS[@]} ps -q mysql) -q) != ""  ]]; then
-            docker-compose -p $PROJECT ${DOCKER_COMPOSE_ARGS[@]} exec -T mysql mysqldump -uroot $MYSQL_DATABASE
+            docker-compose -p $PROJECT ${DOCKER_COMPOSE_ARGS[@]} exec -T mysql mysqldump -uroot $MYSQL_DATABASE "${@:2}"
         else
             echo "MYSQL container is not running"
             exit 1
