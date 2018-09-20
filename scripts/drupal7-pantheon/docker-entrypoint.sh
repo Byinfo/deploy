@@ -32,7 +32,15 @@ if [[ "$1" == apache2* ]] || [ "$1" == php-fpm ]; then
 			"  'password' => '${MYSQL_PASSWORD}',\n" \
 			"  'host' => '${MYSQL_HOST}',\n" \
 			"  'collation' => 'utf8_general_ci',\n" \
-			");\n\n" >> $settingsf
+			");\n\n" \
+			"if (!class_exists('DrupalFakeCache')) {\n" \
+			"    \$conf['cache_backends'][] = 'includes/cache-install.inc';\n" \
+			"}\n" \
+			"// Default to throwing away cache data.\n" \
+			"\$conf['cache_default_class'] = 'DrupalFakeCache';\n" \
+			"// Rely on the DB cache for form caching - otherwise forms fail.\n" \
+			"\$conf['cache_class_cache_form'] = 'DrupalDatabaseCache';\n" >> $settingsf
+
 		chown "$user:$group" $settingsf;
 	fi
 
