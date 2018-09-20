@@ -40,7 +40,6 @@ if [[ "$1" == apache2* ]] || [ "$1" == php-fpm ]; then
 			"\$conf['cache_default_class'] = 'DrupalFakeCache';\n" \
 			"// Rely on the DB cache for form caching - otherwise forms fail.\n" \
 			"\$conf['cache_class_cache_form'] = 'DrupalDatabaseCache';\n" >> $settingsf
-
 		chown "$user:$group" $settingsf;
 	fi
 
