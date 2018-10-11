@@ -22,7 +22,6 @@ if [[ "$1" == apache2* ]] || [ "$1" == php-fpm ]; then
 	if [ ! -e protected/config/db.php ]; then
 		cat <<EOF > protected/config/db.php
 <?php
-
 return [
     'class' => 'yii\db\Connection',
     'dsn' => 'mysql:host=${MYSQL_HOST};dbname=${MYSQL_DATABASE}',
@@ -33,10 +32,17 @@ return [
     'schemaCacheDuration' => 3600,
     'schemaCache' => 'cache',
 ];
-
 EOF
-
 	fi
+	
+	if [ ! -e protected/config/environment.php ]; then
+		cat <<EOF > protected/config/environment.php
+<?php
+// this var will include proper config (main_local.php)
+
+define("YII_ENV", PROD);
+EOF
+	fi	
 fi
 
 exec "$@"
