@@ -19,8 +19,8 @@ if [[ "$1" == apache2* ]] || [ "$1" == php-fpm ]; then
 		group="$(id -g)"
 	fi
 
-	if [ ! -e config/db.php ]; then
-		cat <<EOF > config/db.php
+	if [ ! -e protected/config/db.php ]; then
+		cat <<EOF > protected/config/db.php
 <?php
 
 return [
