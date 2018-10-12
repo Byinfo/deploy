@@ -18,7 +18,7 @@ if [[ "$1" == apache2* ]] || [ "$1" == php-fpm ]; then
 		user="$(id -u)"
 		group="$(id -g)"
 	fi
-	
+	# FIXME files and folders created under root uid/gid. Should be created under user.
 	if [ ! -e protected/runtime ]; then
 		mkdir protected/runtime && chmod 777 protected/runtime
 	fi
