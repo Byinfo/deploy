@@ -20,11 +20,11 @@ if [[ "$1" == apache2* ]] || [ "$1" == php-fpm ]; then
 	fi
 	
 	if [ ! -e protected/runtime ]; then
-		mkdir protected/runtime && chmod 775 protected/runtime
+		mkdir protected/runtime && chmod 777 protected/runtime
 	fi
 	
 	if [ ! -e assets ]; then
-		mkdir assets && chmod 775 assets
+		mkdir assets && chmod 777 assets
 	fi	
 	
 	if [ ! -e protected/config/db.php ]; then
