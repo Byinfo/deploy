@@ -30,16 +30,14 @@ if [[ "$1" == apache2* ]] || [ "$1" == php-fpm ]; then
 	if [ ! -e protected/config/db.php ]; then
 		cat <<EOF > protected/config/db.php
 <?php
-return [
-    'class' => 'yii\db\Connection',
-    'dsn' => 'mysql:host=${MYSQL_HOST};dbname=${MYSQL_DATABASE}',
+return array {
+    'connectionString' => 'mysql:host=${MYSQL_HOST};dbname=${MYSQL_DATABASE}',
+    'emulatePrepare' => true,   
     'username' => '${MYSQL_USER}',
     'password' => '${MYSQL_PASSWORD}',
     'charset' => 'utf8',
-    'enableSchemaCache' => true,
-    'schemaCacheDuration' => 3600,
-    'schemaCache' => 'cache',
-];
+    'enableParamLogging' => true,
+};
 EOF
 	fi
 	
