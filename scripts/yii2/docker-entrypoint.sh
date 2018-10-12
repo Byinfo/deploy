@@ -18,7 +18,15 @@ if [[ "$1" == apache2* ]] || [ "$1" == php-fpm ]; then
 		user="$(id -u)"
 		group="$(id -g)"
 	fi
-
+	
+	if [ ! -e protected/runtime ]; then
+		mkdir protected/runtime && chmod 775 protected/runtime
+	fi
+	
+	if [ ! -e assets ]; then
+		mkdir assets && chmod 775 assets
+	fi	
+	
 	if [ ! -e protected/config/db.php ]; then
 		cat <<EOF > protected/config/db.php
 <?php
