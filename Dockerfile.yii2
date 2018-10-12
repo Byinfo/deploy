@@ -14,7 +14,7 @@ RUN apt-get install -y \
 
 RUN curl -sOL 'https://downloads.sourceforge.net/project/imagemagick/old-sources/6.x/6.7/ImageMagick-6.7.7-10.tar.gz'
 RUN tar xvf ImageMagick-6.7.7-10.tar.gz
-RUN (cd ImageMagick-6.7.7-10 && ./configure && make && make install)
+RUN (cd ImageMagick-6.7.7-10 && ./configure && make -j $(nproc) && make install)
 
 RUN yarn global add gulp
 
