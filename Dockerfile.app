@@ -31,8 +31,10 @@ RUN { \
 RUN { \
     echo 'short_open_tag=Off'; \
     echo 'memory_limit=512M'; \
-    echo 'post_max_size=512M'; \
-    echo 'upload_max_filesize=512M'; \
+    echo 'post_max_size=6152M'; \
+    echo 'upload_max_filesize=6144M'; \
+    echo 'max_execution_time=3600'; \
+    echo 'max_input_time=3600'; \
     echo 'error_reporting=E_ALL'; \
     echo 'display_errors=On'; \
     echo 'display_startup_errors=On'; \
